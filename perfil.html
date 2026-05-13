@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PsicoManager — Meu Perfil</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/polish.css" />
+  <style>
+    .profile-hero {
+      background: linear-gradient(135deg, var(--bg-sidebar) 0%, var(--primary) 100%);
+      border-radius: var(--radius-lg); padding: 32px 36px;
+      display: flex; align-items: center; gap: 28px;
+      margin-bottom: 28px; position: relative; overflow: hidden;
+    }
+    .profile-hero::before {
+      content:''; position:absolute; width:320px; height:320px; border-radius:50%;
+      background:rgba(92,184,168,0.1); top:-100px; right:60px; pointer-events:none;
+    }
+
+    .profile-avatar-wrap { position: relative; flex-shrink: 0; }
+    .profile-avatar {
+      width: 88px; height: 88px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--primary-light));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 32px; font-weight: 700; color: #fff;
+      border: 3px solid rgba(255,255,255,0.3);
+    }
+    .avatar-edit-btn {
+      position: absolute; bottom: 0; right: 0;
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--accent); border: 2px solid #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; color: #fff; cursor: pointer; transition: var(--transition);
+    }
+    .avatar-edit-btn:hover { background: var(--primary); }
+
+    .profile-info { flex: 1; position: relative; z-index: 1; }
+    .profile-info h2 { font-family: var(--font-display); font-size: 22px; font-weight: 600; color: #fff; margin-bottom: 4px; }
+    .profile-info p  { font-size: 13.5px; color: rgba(255,255,255,0.6); margin-bottom: 12px; }
+    .profile-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+    .profile-tag {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.8);
+      border: 1px solid rgba(255,255,255,0.15);
+      font-size: 12px; font-weight: 500; padding: 4px 12px; border-radius: 20px;
+    }
+
+    .profile-stats { display: flex; gap: 32px; position: relative; z-index: 1; }
+    .pstat { text-align: center; }
+    .pstat-val { font-size: 22px; font-weight: 700; color: #fff; }
+    .pstat-label { font-size: 11px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: .06em; margin-top: 2px; }
+
+    .tab-nav {
+      display: flex; gap: 2px;
+      border-bottom: 1px solid var(--border); margin-bottom: 24px;
+    }
+    .tab-btn {
+      padding: 10px 20px; border: none; background: none;
+      font-family: var(--font-body); font-size: 13.5px; font-weight: 500;
+      color: var(--text-secondary); cursor: pointer; transition: var(--transition);
+      border-bottom: 2px solid transparent; margin-bottom: -1px;
+    }
+    .tab-btn:hover { color: var(--primary); }
+    .tab-btn.active { color: var(--primary); border-bottom-color: var(--accent); font-weight: 600; }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; animation: fadeIn .25s ease; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+    .form-section { margin-bottom: 28px; }
+    .form-section-title {
+      font-family: var(--font-display); font-size: 15px; font-weight: 600;
+      color: var(--text-primary); margin-bottom: 16px; padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .form-group { margin-bottom: 18px; }
+    .form-row   { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+    .photo-upload-area {
+      border: 2px dashed var(--border); border-radius: var(--radius-md);
+      padding: 32px; text-align: center; cursor: pointer; transition: var(--transition);
+      background: var(--bg-main);
+    }
+    .photo-upload-area:hover { border-color: var(--accent); background: rgba(92,184,168,0.04); }
+    .photo-upload-area i { font-size: 32px; color: var(--text-muted); margin-bottom: 10px; }
+    .photo-upload-area p { font-size: 13.5px; color: var(--text-secondary); margin: 0; }
+    .photo-upload-area span { font-size: 12px; color: var(--text-muted); }
+
+    .crp-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(61,170,114,0.1); border: 1px solid rgba(61,170,114,0.25);
+      color: var(--success); padding: 8px 16px; border-radius: var(--radius-sm);
+      font-size: 13px; font-weight: 600; margin-top: 8px;
+    }
+
+    .session-item {
+      display: flex; align-items: center; gap: 14px;
+      padding: 14px 16px; border-radius: var(--radius-sm);
+      background: var(--bg-main); border: 1px solid var(--border);
+      margin-bottom: 10px; transition: var(--transition);
+    }
+    .session-item:hover { border-color: var(--accent-soft); }
+    .session-device { font-size: 20px; flex-shrink: 0; }
+    .session-info { flex: 1; }
+    .session-name  { font-size: 13.5px; font-weight: 500; color: var(--text-primary); }
+    .session-meta  { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    .session-current { font-size: 11px; font-weight: 600; color: var(--success); padding: 2px 8px; background: rgba(61,170,114,0.1); border-radius: 20px; }
+
+    .notif-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 0; border-bottom: 1px solid var(--border);
+    }
+    .notif-row:last-child { border-bottom: none; }
+    .notif-info p   { font-size: 13.5px; font-weight: 500; color: var(--text-primary); }
+    .notif-info span{ font-size: 12px; color: var(--text-muted); }
+
+    .toggle-switch { position: relative; width: 42px; height: 24px; flex-shrink: 0; }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute; inset: 0; background: var(--border); border-radius: 12px;
+      cursor: pointer; transition: .3s;
+    }
+    .toggle-slider::before {
+      content:''; position:absolute; width:18px; height:18px;
+      background:#fff; border-radius:50%; top:3px; left:3px; transition:.3s;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+    }
+    .toggle-switch input:checked + .toggle-slider { background: var(--accent); }
+    .toggle-switch input:checked + .toggle-slider::before { transform: translateX(18px); }
+
+    .danger-zone {
+      border: 1px solid rgba(224,92,92,0.25); border-radius: var(--radius-md);
+      padding: 20px 24px; background: rgba(224,92,92,0.03);
+    }
+    .danger-zone h4 { font-size: 14px; font-weight: 600; color: var(--danger); margin-bottom: 4px; }
+    .danger-zone p  { font-size: 13px; color: var(--text-secondary); margin-bottom: 14px; }
+
+    @media(max-width:768px){
+      .profile-hero { flex-direction:column; align-items:flex-start; }
+      .profile-stats { gap:20px; }
+      .form-row, .form-row-3 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-icon">🧠</div>
+    <div class="sidebar-logo-text">
+      <span class="sidebar-logo-title">PsicoManager</span>
+      <span class="sidebar-logo-subtitle">Gestão Psicológica</span>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <p class="nav-section-label">Principal</p>
+    <div class="nav-item"><a href="dashboard.html" class="nav-link"><i class="bi bi-grid-1x2 nav-icon"></i>Dashboard</a></div>
+    <div class="nav-item"><a href="agenda.html" class="nav-link"><i class="bi bi-calendar3 nav-icon"></i>Agenda<span class="nav-badge">5</span></a></div>
+    <p class="nav-section-label">Clínica</p>
+    <div class="nav-item"><a href="pacientes-lista.html" class="nav-link"><i class="bi bi-people nav-icon"></i>Pacientes</a></div>
+    <div class="nav-item"><a href="sessoes.html" class="nav-link"><i class="bi bi-journal-medical nav-icon"></i>Sessões / Prontuários</a></div>
+    <p class="nav-section-label">Gestão</p>
+    <div class="nav-item"><a href="financeiro.html" class="nav-link"><i class="bi bi-cash-coin nav-icon"></i>Financeiro</a></div>
+    <div class="nav-item"><a href="relatorios.html" class="nav-link"><i class="bi bi-bar-chart-line nav-icon"></i>Relatórios</a></div>
+    <p class="nav-section-label">Sistema</p>
+    <div class="nav-item"><a href="perfil.html" class="nav-link active"><i class="bi bi-person-circle nav-icon"></i>Meu Perfil</a></div>
+    <div class="nav-item"><a href="configuracoes.html" class="nav-link"><i class="bi bi-gear nav-icon"></i>Configurações</a></div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="sidebar-user">
+      <div class="sidebar-user-avatar">DS</div>
+      <div class="sidebar-user-info">
+        <p class="sidebar-user-name">Dra. Sofia Mendes</p>
+        <p class="sidebar-user-role">Psicóloga • Admin</p>
+      </div>
+      <i class="bi bi-three-dots-vertical" style="color:rgba(255,255,255,0.4);font-size:14px"></i>
+    </div>
+  </div>
+</aside>
+
+<header class="topbar">
+  <button class="topbar-toggle" id="sidebarToggle"><i class="bi bi-list"></i></button>
+  <div class="topbar-breadcrumb">
+    <span class="topbar-breadcrumb-title">Meu Perfil</span>
+    <span class="topbar-breadcrumb-sep"><i class="bi bi-chevron-right" style="font-size:10px"></i></span>
+    <span class="topbar-breadcrumb-sub">Informações pessoais e segurança</span>
+  </div>
+  <div class="topbar-actions">
+    <div class="topbar-search"><i class="bi bi-search"></i><input type="text" placeholder="Buscar..." /></div>
+    <button class="topbar-btn"><i class="bi bi-bell"></i><span class="topbar-btn-badge"></span></button>
+    <button class="topbar-btn"><i class="bi bi-chat-dots"></i></button>
+    <div class="topbar-divider"></div>
+    <div class="topbar-avatar">DS</div>
+  </div>
+</header>
+
+<main class="main-content">
+
+  <!-- Hero do perfil -->
+  <div class="profile-hero">
+    <div class="profile-avatar-wrap">
+      <div class="profile-avatar">DS</div>
+      <div class="avatar-edit-btn" onclick="showToast('Função de upload de foto disponível em breve.','info')">
+        <i class="bi bi-camera"></i>
+      </div>
+    </div>
+    <div class="profile-info">
+      <h2>Dra. Sofia Mendes</h2>
+      <p>sofia.mendes@psicoManager.com · Ativa há 2 anos</p>
+      <div class="profile-tags">
+        <span class="profile-tag"><i class="bi bi-shield-check"></i> Administradora</span>
+        <span class="profile-tag"><i class="bi bi-person-badge"></i> CRP 03/12345</span>
+        <span class="profile-tag"><i class="bi bi-geo-alt"></i> Salvador, BA</span>
+      </div>
+    </div>
+    <div class="profile-stats">
+      <div class="pstat"><p class="pstat-val">128</p><p class="pstat-label">Pacientes</p></div>
+      <div class="pstat"><p class="pstat-val">312</p><p class="pstat-label">Sessões</p></div>
+      <div class="pstat"><p class="pstat-val">4.9</p><p class="pstat-label">Avaliação</p></div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tab-nav">
+    <button class="tab-btn active" onclick="setTab('dados',this)"><i class="bi bi-person me-2"></i>Dados Pessoais</button>
+    <button class="tab-btn" onclick="setTab('profissional',this)"><i class="bi bi-briefcase me-2"></i>Info Profissional</button>
+    <button class="tab-btn" onclick="setTab('seguranca',this)"><i class="bi bi-shield-lock me-2"></i>Segurança</button>
+    <button class="tab-btn" onclick="setTab('notificacoes',this)"><i class="bi bi-bell me-2"></i>Notificações</button>
+  </div>
+
+  <!-- TAB: Dados Pessoais -->
+  <div class="tab-panel active" id="tab-dados">
+    <div class="card">
+      <div class="card-body">
+        <div class="form-section">
+          <h3 class="form-section-title">Foto de Perfil</h3>
+          <div class="photo-upload-area" onclick="showToast('Selecione uma imagem do seu dispositivo.','info')">
+            <i class="bi bi-cloud-upload d-block mx-auto mb-2"></i>
+            <p>Arraste uma foto ou clique para selecionar</p>
+            <span>JPG, PNG ou WEBP · Máximo 5MB</span>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3 class="form-section-title">Informações Básicas</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Nome</label>
+              <input type="text" class="form-control" value="Sofia" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Sobrenome</label>
+              <input type="text" class="form-control" value="Mendes" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">E-mail</label>
+              <input type="email" class="form-control" value="sofia.mendes@psicoManager.com" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Telefone</label>
+              <input type="text" class="form-control" value="(71) 99876-5432" data-mask="phone" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Data de Nascimento</label>
+              <input type="date" class="form-control" value="1987-03-22" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">CPF</label>
+              <input type="text" class="form-control" value="123.456.789-00" data-mask="cpf" />
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3 class="form-section-title">Endereço</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">CEP</label>
+              <input type="text" class="form-control" value="40010-000" data-mask="cep" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Cidade / Estado</label>
+              <input type="text" class="form-control" value="Salvador, BA" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Endereço completo</label>
+            <input type="text" class="form-control" value="Av. Tancredo Neves, 1632 — Sala 408, Pituba" />
+          </div>
+        </div>
+
+        <div class="d-flex gap-8" style="justify-content:flex-end">
+          <button class="btn-ghost">Cancelar</button>
+          <button class="btn-accent" onclick="showToast('Perfil atualizado com sucesso!','success')">
+            <i class="bi bi-check-lg"></i> Salvar alterações
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: Profissional -->
+  <div class="tab-panel" id="tab-profissional">
+    <div class="card">
+      <div class="card-body">
+        <div class="form-section">
+          <h3 class="form-section-title">Registro Profissional</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Número do CRP</label>
+              <input type="text" class="form-control" value="03/12345" />
+              <div class="crp-badge"><i class="bi bi-patch-check-fill"></i> CRP Verificado</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Especialidade</label>
+              <select class="form-control">
+                <option selected>Psicologia Clínica</option>
+                <option>Neuropsicologia</option>
+                <option>Psicologia Organizacional</option>
+                <option>Psicologia Escolar</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Formação</label>
+              <input type="text" class="form-control" value="UFBA — Psicologia (2010)" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Pós-graduação</label>
+              <input type="text" class="form-control" value="TCC — Instituto Paulista (2013)" />
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3 class="form-section-title">Sobre mim / Bio</h3>
+          <div class="form-group">
+            <textarea class="form-control" rows="4" placeholder="Descreva sua abordagem terapêutica, áreas de atuação, etc.">Psicóloga clínica com especialização em TCC e mais de 10 anos de experiência no atendimento individual de adultos e adolescentes. Atuo com ansiedade, depressão, transtornos do humor e desenvolvimento pessoal.</textarea>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3 class="form-section-title">Horário de Atendimento</h3>
+          <div class="form-row-3">
+            <div class="form-group">
+              <label class="form-label">Dias</label>
+              <select class="form-control">
+                <option selected>Segunda a Sexta</option>
+                <option>Segunda a Sábado</option>
+                <option>Personalizado</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Início</label>
+              <input type="time" class="form-control" value="08:00" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Fim</label>
+              <input type="time" class="form-control" value="18:00" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Duração padrão da sessão</label>
+              <select class="form-control">
+                <option>40 minutos</option>
+                <option selected>50 minutos</option>
+                <option>60 minutos</option>
+                <option>90 minutos</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Valor padrão da sessão</label>
+              <input type="text" class="form-control" value="180,00" />
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex gap-8" style="justify-content:flex-end">
+          <button class="btn-ghost">Cancelar</button>
+          <button class="btn-accent" onclick="showToast('Informações profissionais salvas!','success')">
+            <i class="bi bi-check-lg"></i> Salvar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: Segurança -->
+  <div class="tab-panel" id="tab-seguranca">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+
+      <div class="card">
+        <div class="card-header"><h2 class="card-title">Alterar Senha</h2></div>
+        <div class="card-body">
+          <div class="form-group">
+            <label class="form-label">Senha atual</label>
+            <input type="password" class="form-control" placeholder="••••••••" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Nova senha</label>
+            <input type="password" class="form-control" placeholder="Mínimo 8 caracteres" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Confirmar nova senha</label>
+            <input type="password" class="form-control" placeholder="Repita a senha" />
+          </div>
+          <button class="btn-primary w-100" onclick="showToast('Senha alterada com sucesso!','success')">
+            <i class="bi bi-lock"></i> Atualizar senha
+          </button>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:20px">
+        <div class="card">
+          <div class="card-header"><h2 class="card-title">Sessões Ativas</h2></div>
+          <div class="card-body">
+            <div class="session-item">
+              <div class="session-device">💻</div>
+              <div class="session-info">
+                <p class="session-name">Chrome · Windows 11</p>
+                <p class="session-meta">Salvador, BA · Agora mesmo</p>
+              </div>
+              <span class="session-current">Atual</span>
+            </div>
+            <div class="session-item">
+              <div class="session-device">📱</div>
+              <div class="session-info">
+                <p class="session-name">Safari · iPhone 14</p>
+                <p class="session-meta">Salvador, BA · Ontem, 19:42</p>
+              </div>
+              <button class="btn-ghost" style="font-size:12px;padding:5px 10px;color:var(--danger);border-color:rgba(224,92,92,0.3)" onclick="showToast('Sessão encerrada.','success')">Encerrar</button>
+            </div>
+            <div class="session-item">
+              <div class="session-device">💻</div>
+              <div class="session-info">
+                <p class="session-name">Firefox · macOS</p>
+                <p class="session-meta">São Paulo, SP · 3 dias atrás</p>
+              </div>
+              <button class="btn-ghost" style="font-size:12px;padding:5px 10px;color:var(--danger);border-color:rgba(224,92,92,0.3)" onclick="showToast('Sessão encerrada.','success')">Encerrar</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="danger-zone">
+          <h4><i class="bi bi-exclamation-triangle me-2"></i>Zona de Perigo</h4>
+          <p>Ações irreversíveis. Tenha cuidado ao prosseguir.</p>
+          <button class="btn-ghost" style="color:var(--danger);border-color:rgba(224,92,92,0.3);font-size:13px"
+            onclick="confirmAction('Tem certeza que deseja encerrar todas as sessões?', () => showToast('Todas as sessões foram encerradas.','success'))">
+            <i class="bi bi-box-arrow-right"></i> Encerrar todas as sessões
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- TAB: Notificações -->
+  <div class="tab-panel" id="tab-notificacoes">
+    <div class="card">
+      <div class="card-header"><h2 class="card-title">Preferências de Notificação</h2></div>
+      <div class="card-body">
+        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:20px">Escolha quais notificações deseja receber e por qual canal.</p>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+          <div>
+            <p style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:12px">E-mail</p>
+            <div class="notif-row"><div class="notif-info"><p>Nova consulta agendada</p><span>Quando um paciente marca uma consulta</span></div><label class="toggle-switch"><input type="checkbox" checked><span class="toggle-slider"></span></label></div>
+            <div class="notif-row"><div class="notif-info"><p>Lembrete de consulta</p><span>1 hora antes da sessão</span></div><label class="toggle-switch"><input type="checkbox" checked><span class="toggle-slider"></span></label></div>
+            <div class="notif-row"><div class="notif-info"><p>Consulta cancelada</p><span>Quando um paciente cancela</span></div><label class="toggle-switch"><input type="checkbox" checked><span class="toggle-slider"></span></label></div>
+            <div class="notif-row"><div class="notif-info"><p>Pagamento recebido</p><span>Quando um pagamento é confirmado</span></div><label class="toggle-switch"><input type="checkbox"><span class="toggle-slider"></span></label></div>
+            <div class="notif-row"><div class="notif-info"><p>Relatório semanal</p><span>Resumo da semana toda segunda-feira</span></div><label class="toggle-switch"><input type="checkbox" checked><span class="toggle-slider"></span></label></div>
+          </div>
+          <div>
+            <p style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:12px">Sistema (Push)</p>
+            <div class="notif-row"><div class="notif-info"><p>Alertas em tempo real</p><span>Notificações no painel</span></div><label class="toggle-switch"><input type="checkbox" checked><span class="toggle-slider"></span></label></div>
+            <div class="notif-row"><div class="notif-info"><p>Novo paciente cadastrado</p><span>Quando alguém é adicionado</span></div><label class="toggle-switch"><input type="checkbox" checked><span class="toggle-slider"></span></label></div>
+            <div class="notif-row"><div class="notif-info"><p>Pagamento pendente</p><span>Lembretes de cobranças abertas</span></div><label class="toggle-switch"><input type="checkbox" checked><span class="toggle-slider"></span></label></div>
+            <div class="notif-row"><div class="notif-info"><p>Atualizações do sistema</p><span>Novidades e melhorias</span></div><label class="toggle-switch"><input type="checkbox"><span class="toggle-slider"></span></label></div>
+            <div class="notif-row"><div class="notif-info"><p>Dicas de uso</p><span>Sugestões para usar melhor o sistema</span></div><label class="toggle-switch"><input type="checkbox"><span class="toggle-slider"></span></label></div>
+          </div>
+        </div>
+
+        <div class="d-flex gap-8 mt-24" style="justify-content:flex-end">
+          <button class="btn-accent" onclick="showToast('Preferências de notificação salvas!','success')">
+            <i class="bi bi-check-lg"></i> Salvar preferências
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/main.js"></script>
+<script>
+function setTab(id, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-' + id).classList.add('active');
+}
+</script>
+
+<!-- ── SCROLL PROGRESS ── -->
+<div id="scrollProgress"></div>
+
+<!-- ── PAGE LOADER ── -->
+<div id="pageLoader">
+  <div class="loader-logo">
+    <div class="loader-logo-icon">&#x1F9E0;</div>
+    <span class="loader-logo-text">PsicoManager</span>
+  </div>
+  <div class="loader-bar"><div class="loader-bar-fill" id="loaderFill"></div></div>
+  <p class="loader-text">Carregando...</p>
+</div>
+<script>
+(function(){
+  var lf = document.getElementById('loaderFill');
+  var pl = document.getElementById('pageLoader');
+  var w  = 0;
+  var t  = setInterval(function(){
+    w += Math.random() * 20 + 10;
+    if (w >= 100) { w = 100; clearInterval(t); setTimeout(function(){ pl.classList.add('hidden'); }, 200); }
+    lf.style.width = w + '%';
+  }, 120);
+  window.addEventListener('scroll', function(){
+    var s = document.documentElement;
+    var p = (s.scrollTop / (s.scrollHeight - s.clientHeight)) * 100;
+    var bar = document.getElementById('scrollProgress');
+    if (bar) bar.style.width = p + '%';
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PsicoManager — Pacientes</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/polish.css" />
+  <style>
+    /* ── FILTROS ── */
+    .filtros-bar {
+      background: var(--bg-card); border-radius: var(--radius-md);
+      border: 1px solid var(--border); padding: 16px 20px;
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      margin-bottom: 20px; box-shadow: var(--shadow-sm);
+    }
+    .filtros-bar .search-input {
+      flex: 1; min-width: 200px;
+      display: flex; align-items: center; gap: 8px;
+      background: var(--bg-main); border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm); padding: 8px 14px;
+      transition: var(--transition);
+    }
+    .filtros-bar .search-input:focus-within {
+      border-color: var(--accent); background: #fff;
+      box-shadow: 0 0 0 3px rgba(92,184,168,0.1);
+    }
+    .filtros-bar .search-input i  { color: var(--text-muted); font-size: 14px; }
+    .filtros-bar .search-input input { border: none; background: none; outline: none; font-size: 13.5px; width: 100%; font-family: var(--font-body); color: var(--text-primary); }
+    .filtros-bar .search-input input::placeholder { color: var(--text-muted); }
+
+    /* ── VIEW TOGGLE ── */
+    .view-toggle {
+      display: flex; background: var(--bg-main);
+      border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 3px;
+    }
+    .view-btn {
+      width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center;
+      justify-content: center; border: none; background: none; cursor: pointer;
+      color: var(--text-muted); font-size: 15px; transition: var(--transition);
+    }
+    .view-btn.active { background: #fff; color: var(--primary); box-shadow: var(--shadow-sm); }
+
+    /* ── TABLE VIEW ── */
+    .paciente-row td { vertical-align: middle; }
+    .pac-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; color: #fff; flex-shrink: 0;
+    }
+    .pac-name { font-weight: 600; font-size: 13.5px; color: var(--text-primary); }
+    .pac-sub  { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+
+    .action-btns { display: flex; gap: 6px; opacity: 0; transition: var(--transition); }
+    tbody tr:hover .action-btns { opacity: 1; }
+    .action-btn {
+      width: 28px; height: 28px; border-radius: 7px; border: 1px solid var(--border);
+      background: #fff; display: flex; align-items: center; justify-content: center;
+      font-size: 13px; cursor: pointer; transition: var(--transition); color: var(--text-secondary);
+    }
+    .action-btn:hover.edit    { border-color: var(--accent); color: var(--accent); background: rgba(92,184,168,.07); }
+    .action-btn:hover.prontu  { border-color: var(--primary); color: var(--primary); background: rgba(44,95,110,.07); }
+    .action-btn:hover.del     { border-color: var(--danger); color: var(--danger); background: rgba(224,92,92,.07); }
+
+    /* ── CARD VIEW ── */
+    #gridView { display: none; }
+    #gridView.active { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px,1fr)); gap: 16px; }
+
+    .pac-card {
+      background: var(--bg-card); border-radius: var(--radius-md);
+      border: 1px solid var(--border); padding: 20px;
+      box-shadow: var(--shadow-sm); transition: var(--transition);
+      display: flex; flex-direction: column; gap: 14px;
+    }
+    .pac-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: var(--accent-soft); }
+    .pac-card-top { display: flex; align-items: center; gap: 12px; }
+    .pac-card-avatar { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; color: #fff; flex-shrink: 0; }
+    .pac-card-name { font-weight: 600; font-size: 14px; color: var(--text-primary); }
+    .pac-card-sub  { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    .pac-card-infos { display: flex; flex-direction: column; gap: 6px; }
+    .pac-card-info { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--text-secondary); }
+    .pac-card-info i { font-size: 13px; color: var(--text-muted); width: 14px; text-align: center; }
+    .pac-card-footer { display: flex; gap: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+    .pac-card-footer button { flex: 1; padding: 7px; font-size: 12px; }
+
+    /* ── MODAL FICHA ── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+      z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(3px);
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-box {
+      background: #fff; border-radius: var(--radius-lg);
+      width: 100%; max-width: 560px; max-height: 90vh;
+      overflow-y: auto; margin: 16px; box-shadow: var(--shadow-lg);
+      animation: fadeUp .3s ease both;
+    }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 24px; border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; background: #fff; z-index: 1;
+    }
+    .modal-title { font-family: var(--font-display); font-size: 17px; font-weight: 600; color: var(--text-primary); }
+    .modal-close { width: 32px; height: 32px; border-radius: 8px; background: var(--bg-main); border: none; cursor: pointer; font-size: 18px; color: var(--text-muted); display: flex; align-items: center; justify-content: center; }
+    .modal-close:hover { background: var(--border); }
+    .modal-body { padding: 24px; }
+
+    .ficha-hero { display: flex; align-items: center; gap: 18px; padding: 20px; background: var(--bg-main); border-radius: var(--radius-md); margin-bottom: 24px; }
+    .ficha-avatar { width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 700; color: #fff; flex-shrink: 0; }
+    .ficha-name { font-family: var(--font-display); font-size: 18px; font-weight: 600; color: var(--text-primary); }
+    .ficha-sub  { font-size: 13px; color: var(--text-secondary); margin-top: 3px; }
+    .ficha-tags { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+
+    .ficha-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 20px; margin-bottom: 20px; }
+    .ficha-item label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--text-muted); display: block; margin-bottom: 2px; }
+    .ficha-item p { font-size: 13.5px; color: var(--text-primary); font-weight: 500; }
+
+    .hist-item { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .hist-item:last-child { border-bottom: none; }
+    .hist-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); margin-top: 5px; flex-shrink: 0; }
+    .hist-desc { font-size: 13px; color: var(--text-primary); }
+    .hist-date { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
+
+    /* paginação */
+    .pagination { display: flex; align-items: center; gap: 6px; }
+    .page-item { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 13px; cursor: pointer; border: 1px solid var(--border); background: #fff; color: var(--text-secondary); transition: var(--transition); }
+    .page-item:hover { border-color: var(--accent); color: var(--primary); }
+    .page-item.active { background: var(--primary); color: #fff; border-color: var(--primary); font-weight: 600; }
+  </style>
+</head>
+<body>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-icon">🧠</div>
+    <div class="sidebar-logo-text">
+      <span class="sidebar-logo-title">PsicoManager</span>
+      <span class="sidebar-logo-subtitle">Gestão Psicológica</span>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <p class="nav-section-label">Principal</p>
+    <div class="nav-item"><a href="dashboard.html" class="nav-link"><i class="bi bi-grid-1x2 nav-icon"></i>Dashboard</a></div>
+    <div class="nav-item"><a href="agenda.html" class="nav-link"><i class="bi bi-calendar3 nav-icon"></i>Agenda<span class="nav-badge">5</span></a></div>
+    <p class="nav-section-label">Clínica</p>
+    <div class="nav-item"><a href="pacientes-lista.html" class="nav-link active"><i class="bi bi-people nav-icon"></i>Pacientes</a></div>
+    <div class="nav-item"><a href="sessoes.html" class="nav-link"><i class="bi bi-journal-medical nav-icon"></i>Sessões / Prontuários</a></div>
+    <p class="nav-section-label">Gestão</p>
+    <div class="nav-item"><a href="financeiro.html" class="nav-link"><i class="bi bi-cash-coin nav-icon"></i>Financeiro</a></div>
+    <div class="nav-item"><a href="relatorios.html" class="nav-link"><i class="bi bi-bar-chart-line nav-icon"></i>Relatórios</a></div>
+    <p class="nav-section-label">Sistema</p>
+    <div class="nav-item"><a href="perfil.html" class="nav-link"><i class="bi bi-person-circle nav-icon"></i>Meu Perfil</a></div>
+    <div class="nav-item"><a href="configuracoes.html" class="nav-link"><i class="bi bi-gear nav-icon"></i>Configurações</a></div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="sidebar-user">
+      <div class="sidebar-user-avatar">DS</div>
+      <div class="sidebar-user-info">
+        <p class="sidebar-user-name">Dra. Sofia Mendes</p>
+        <p class="sidebar-user-role">Psicóloga • Admin</p>
+      </div>
+      <i class="bi bi-three-dots-vertical" style="color:rgba(255,255,255,0.4);font-size:14px"></i>
+    </div>
+  </div>
+</aside>
+
+<header class="topbar">
+  <button class="topbar-toggle" id="sidebarToggle"><i class="bi bi-list"></i></button>
+  <div class="topbar-breadcrumb">
+    <span class="topbar-breadcrumb-title">Pacientes</span>
+    <span class="topbar-breadcrumb-sep"><i class="bi bi-chevron-right" style="font-size:10px"></i></span>
+    <span class="topbar-breadcrumb-sub">Lista geral</span>
+  </div>
+  <div class="topbar-actions">
+    <div class="topbar-search"><i class="bi bi-search"></i><input type="text" placeholder="Buscar paciente..." /></div>
+    <button class="topbar-btn"><i class="bi bi-bell"></i><span class="topbar-btn-badge"></span></button>
+    <button class="topbar-btn"><i class="bi bi-chat-dots"></i></button>
+    <div class="topbar-divider"></div>
+    <div class="topbar-avatar" onclick="window.location='perfil.html'">DS</div>
+  </div>
+</header>
+
+<main class="main-content">
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Pacientes</h1>
+      <p class="page-subtitle">128 pacientes cadastrados · 112 ativos</p>
+    </div>
+    <div class="d-flex gap-8">
+      <button class="btn-ghost" onclick="showToast('Exportando lista de pacientes...','info')"><i class="bi bi-download"></i> Exportar</button>
+      <a href="pacientes-cadastro.html" class="btn-accent" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none">
+        <i class="bi bi-plus-lg"></i> Novo Paciente
+      </a>
+    </div>
+  </div>
+
+  <!-- Stats rápidos -->
+  <div class="grid-4 mb-20">
+    <div class="stat-card">
+      <div class="stat-icon teal"><i class="bi bi-people-fill"></i></div>
+      <div class="stat-info"><p class="stat-value">128</p><p class="stat-label">Total de Pacientes</p></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon green"><i class="bi bi-person-check"></i></div>
+      <div class="stat-info"><p class="stat-value">112</p><p class="stat-label">Ativos</p></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon orange"><i class="bi bi-person-dash"></i></div>
+      <div class="stat-info"><p class="stat-value">16</p><p class="stat-label">Inativos / Alta</p></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon blue"><i class="bi bi-person-plus"></i></div>
+      <div class="stat-info"><p class="stat-value">8</p><p class="stat-label">Novos este mês</p></div>
+    </div>
+  </div>
+
+  <!-- Barra de filtros -->
+  <div class="filtros-bar">
+    <div class="search-input" style="flex:1;min-width:200px">
+      <i class="bi bi-search"></i>
+      <input type="text" id="searchInput" placeholder="Buscar por nome, e-mail ou CPF..." oninput="filtrar()" />
+    </div>
+    <select class="form-control" style="width:auto;padding:8px 12px;font-size:13px" onchange="filtrar()" id="filtroStatus">
+      <option value="">Todos os status</option>
+      <option value="Ativo">Ativo</option>
+      <option value="Inativo">Inativo</option>
+      <option value="Alta">Alta</option>
+    </select>
+    <select class="form-control" style="width:auto;padding:8px 12px;font-size:13px" onchange="filtrar()" id="filtroTipo">
+      <option value="">Todos os tipos</option>
+      <option value="Sessão individual">Sessão individual</option>
+      <option value="Avaliação">Avaliação</option>
+      <option value="Primeira consulta">Primeira consulta</option>
+    </select>
+    <div class="view-toggle">
+      <button class="view-btn active" id="btnTabela" onclick="setView('tabela')" title="Tabela"><i class="bi bi-list-ul"></i></button>
+      <button class="view-btn" id="btnGrid" onclick="setView('grid')" title="Cards"><i class="bi bi-grid-3x3-gap"></i></button>
+    </div>
+  </div>
+
+  <!-- TABELA VIEW -->
+  <div id="tabelaView">
+    <div class="card">
+      <div class="table-wrapper" style="border:none;border-radius:0">
+        <table id="tabelaPacientes">
+          <thead>
+            <tr>
+              <th>Paciente</th>
+              <th>Contato</th>
+              <th>Tipo</th>
+              <th>Última Sessão</th>
+              <th>Próxima Sessão</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tbodyPacientes"></tbody>
+        </table>
+      </div>
+      <div style="padding:14px 20px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+        <span style="font-size:12.5px;color:var(--text-muted)" id="countLabel">Exibindo 10 de 128 pacientes</span>
+        <div class="pagination">
+          <div class="page-item"><i class="bi bi-chevron-left" style="font-size:11px"></i></div>
+          <div class="page-item active">1</div>
+          <div class="page-item">2</div>
+          <div class="page-item">3</div>
+          <div class="page-item" style="width:auto;padding:0 10px">...</div>
+          <div class="page-item">13</div>
+          <div class="page-item"><i class="bi bi-chevron-right" style="font-size:11px"></i></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GRID VIEW -->
+  <div id="gridView"></div>
+
+</main>
+
+<!-- Modal Ficha do Paciente -->
+<div class="modal-overlay" id="modalFicha">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 class="modal-title">Ficha do Paciente</h3>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body" id="fichaBody"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/main.js"></script>
+<script>
+const cores = [
+  'linear-gradient(135deg,#5CB8A8,#3D7A8A)',
+  'linear-gradient(135deg,#2C5F6E,#3D7A8A)',
+  'linear-gradient(135deg,#3DAA72,#2E8B57)',
+  'linear-gradient(135deg,#F0A500,#D08000)',
+  'linear-gradient(135deg,#6C63FF,#4B44CC)',
+  'linear-gradient(135deg,#E05C5C,#C04040)',
+  'linear-gradient(135deg,#9B59B6,#7D3C98)',
+];
+
+const pacientes = [
+  { nome:'Ana Luíza Ferreira',    email:'ana.ferreira@email.com',    tel:'(71) 99234-5678', tipo:'Sessão individual', ult:'05/05/2025', prox:'12/05/2025', status:'Ativo',  idade:32, cpf:'123.456.789-00', sessoes:24 },
+  { nome:'Carlos Eduardo Lima',   email:'carlos.lima@email.com',     tel:'(71) 98876-1234', tipo:'Avaliação',         ult:'08/05/2025', prox:'15/05/2025', status:'Ativo',  idade:28, cpf:'234.567.890-11', sessoes:18 },
+  { nome:'Mariana Santos Oliveira',email:'mariana.santos@email.com', tel:'(71) 97765-4321', tipo:'Sessão individual', ult:'10/05/2025', prox:'17/05/2025', status:'Ativo',  idade:41, cpf:'345.678.901-22', sessoes:21 },
+  { nome:'Roberto Alves Costa',   email:'roberto.alves@email.com',   tel:'(71) 98123-9876', tipo:'Primeira consulta', ult:'12/05/2025', prox:'19/05/2025', status:'Ativo',  idade:35, cpf:'456.789.012-33', sessoes:3  },
+  { nome:'Juliana Pires Ramos',   email:'juliana.pires@email.com',   tel:'(71) 99345-6543', tipo:'Sessão individual', ult:'09/05/2025', prox:'16/05/2025', status:'Ativo',  idade:26, cpf:'567.890.123-44', sessoes:16 },
+  { nome:'Fernando Costa Neto',   email:'fernando.costa@email.com',  tel:'(71) 98654-3210', tipo:'Sessão individual', ult:'02/05/2025', prox:'23/05/2025', status:'Ativo',  idade:44, cpf:'678.901.234-55', sessoes:12 },
+  { nome:'Luciana Melo Barbosa',  email:'luciana.melo@email.com',    tel:'(71) 97892-1100', tipo:'Avaliação',         ult:'28/04/2025', prox:'28/05/2025', status:'Inativo', idade:38, cpf:'789.012.345-66', sessoes:8  },
+  { nome:'Paulo Henrique Souza',  email:'paulo.souza@email.com',     tel:'(71) 99001-2233', tipo:'Sessão individual', ult:'07/05/2025', prox:'14/05/2025', status:'Ativo',  idade:31, cpf:'890.123.456-77', sessoes:9  },
+  { nome:'Camila Rocha Pereira',  email:'camila.rocha@email.com',    tel:'(71) 98765-0011', tipo:'Primeira consulta', ult:'11/05/2025', prox:'—',           status:'Alta',   idade:29, cpf:'901.234.567-88', sessoes:34 },
+  { nome:'Diego Martins Farias',  email:'diego.martins@email.com',   tel:'(71) 97654-9900', tipo:'Sessão individual', ult:'06/05/2025', prox:'13/05/2025', status:'Ativo',  idade:22, cpf:'012.345.678-99', sessoes:6  },
+];
+
+function iniciais(nome) {
+  return nome.split(' ').slice(0,2).map(n=>n[0]).join('').toUpperCase();
+}
+
+function corIdx(nome) {
+  let s = 0; for (const c of nome) s += c.charCodeAt(0);
+  return cores[s % cores.length];
+}
+
+function badgeStatus(s) {
+  if (s==='Ativo')   return '<span class="badge badge-success">Ativo</span>';
+  if (s==='Inativo') return '<span class="badge badge-warning">Inativo</span>';
+  return '<span class="badge badge-muted">Alta</span>';
+}
+
+function renderTabela(lista) {
+  const tb = document.getElementById('tbodyPacientes');
+  tb.innerHTML = lista.map((p,i) => `
+    <tr class="paciente-row">
+      <td>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="pac-avatar" style="background:${corIdx(p.nome)}">${iniciais(p.nome)}</div>
+          <div>
+            <p class="pac-name">${p.nome}</p>
+            <p class="pac-sub">${p.idade} anos · ${p.sessoes} sessões</p>
+          </div>
+        </div>
+      </td>
+      <td><p style="font-size:13px">${p.email}</p><p class="pac-sub">${p.tel}</p></td>
+      <td><span style="font-size:13px;color:var(--text-secondary)">${p.tipo}</span></td>
+      <td><span style="font-size:13px">${p.ult}</span></td>
+      <td><span style="font-size:13px;font-weight:500;color:${p.prox==='—'?'var(--text-muted)':'var(--primary)'}">${p.prox}</span></td>
+      <td>${badgeStatus(p.status)}</td>
+      <td>
+        <div class="action-btns">
+          <button class="action-btn edit" title="Editar" onclick="window.location='pacientes-cadastro.html'"><i class="bi bi-pencil"></i></button>
+          <button class="action-btn prontu" title="Ver prontuário" onclick="window.location='sessoes.html'"><i class="bi bi-journal-medical"></i></button>
+          <button class="action-btn" title="Ficha" onclick='openFicha(${JSON.stringify(p)})'><i class="bi bi-person-lines-fill"></i></button>
+          <button class="action-btn del" title="Excluir" onclick="confirmAction('Excluir ${p.nome}?', ()=> showToast('Paciente removido.','success'))"><i class="bi bi-trash"></i></button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+  document.getElementById('countLabel').textContent = `Exibindo ${lista.length} de ${pacientes.length} pacientes`;
+}
+
+function renderGrid(lista) {
+  const g = document.getElementById('gridView');
+  g.innerHTML = lista.map(p => `
+    <div class="pac-card">
+      <div class="pac-card-top">
+        <div class="pac-card-avatar" style="background:${corIdx(p.nome)}">${iniciais(p.nome)}</div>
+        <div>
+          <p class="pac-card-name">${p.nome}</p>
+          <p class="pac-card-sub">${p.idade} anos · ${p.sessoes} sessões</p>
+        </div>
+      </div>
+      <div class="pac-card-infos">
+        <div class="pac-card-info"><i class="bi bi-envelope"></i>${p.email}</div>
+        <div class="pac-card-info"><i class="bi bi-phone"></i>${p.tel}</div>
+        <div class="pac-card-info"><i class="bi bi-journal"></i>${p.tipo}</div>
+        <div class="pac-card-info"><i class="bi bi-calendar-check"></i>Próx: ${p.prox}</div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding-top:4px">
+        ${badgeStatus(p.status)}
+      </div>
+      <div class="pac-card-footer">
+        <button class="btn-ghost" style="font-size:12px" onclick="window.location='sessoes.html'"><i class="bi bi-journal-medical"></i> Prontuário</button>
+        <button class="btn-outline" style="font-size:12px" onclick='openFicha(${JSON.stringify(p)})'><i class="bi bi-eye"></i> Ver</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+renderTabela(pacientes);
+renderGrid(pacientes);
+
+// Filtro
+function filtrar() {
+  const q    = document.getElementById('searchInput').value.toLowerCase();
+  const st   = document.getElementById('filtroStatus').value;
+  const tipo = document.getElementById('filtroTipo').value;
+  const res  = pacientes.filter(p =>
+    (!q    || p.nome.toLowerCase().includes(q) || p.email.toLowerCase().includes(q) || p.cpf.includes(q)) &&
+    (!st   || p.status === st) &&
+    (!tipo || p.tipo === tipo)
+  );
+  renderTabela(res);
+  renderGrid(res);
+}
+
+// View toggle
+function setView(v) {
+  const tabela = document.getElementById('tabelaView');
+  const grid   = document.getElementById('gridView');
+  const btnT   = document.getElementById('btnTabela');
+  const btnG   = document.getElementById('btnGrid');
+  if (v === 'tabela') {
+    tabela.style.display = 'block';
+    grid.classList.remove('active');
+    btnT.classList.add('active');
+    btnG.classList.remove('active');
+  } else {
+    tabela.style.display = 'none';
+    grid.classList.add('active');
+    btnT.classList.remove('active');
+    btnG.classList.add('active');
+  }
+}
+
+// Modal ficha
+function openFicha(p) {
+  document.getElementById('fichaBody').innerHTML = `
+    <div class="ficha-hero">
+      <div class="ficha-avatar" style="background:${corIdx(p.nome)}">${iniciais(p.nome)}</div>
+      <div>
+        <p class="ficha-name">${p.nome}</p>
+        <p class="ficha-sub">${p.email} · ${p.tel}</p>
+        <div class="ficha-tags">
+          ${badgeStatus(p.status)}
+          <span class="badge badge-info">${p.tipo}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="ficha-grid">
+      <div class="ficha-item"><label>CPF</label><p>${p.cpf}</p></div>
+      <div class="ficha-item"><label>Idade</label><p>${p.idade} anos</p></div>
+      <div class="ficha-item"><label>Última sessão</label><p>${p.ult}</p></div>
+      <div class="ficha-item"><label>Próxima sessão</label><p>${p.prox}</p></div>
+      <div class="ficha-item"><label>Total de sessões</label><p>${p.sessoes} sessões</p></div>
+      <div class="ficha-item"><label>Tipo de atendimento</label><p>${p.tipo}</p></div>
+    </div>
+
+    <p style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:10px">Histórico Recente</p>
+    <div class="hist-item"><div class="hist-dot"></div><div><p class="hist-desc">Sessão individual realizada</p><p class="hist-date">${p.ult}</p></div></div>
+    <div class="hist-item"><div class="hist-dot" style="background:var(--warning)"></div><div><p class="hist-desc">Lembrete de consulta enviado</p><p class="hist-date">Ontem</p></div></div>
+    <div class="hist-item"><div class="hist-dot" style="background:var(--success)"></div><div><p class="hist-desc">Pagamento confirmado — R$ 180,00</p><p class="hist-date">2 dias atrás</p></div></div>
+
+    <div style="display:flex;gap:10px;margin-top:24px">
+      <button class="btn-primary" style="flex:1" onclick="window.location='sessoes.html'"><i class="bi bi-journal-medical"></i> Ver Prontuário</button>
+      <button class="btn-ghost" onclick="closeModal()">Fechar</button>
+    </div>
+  `;
+  document.getElementById('modalFicha').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modalFicha').classList.remove('open');
+}
+</script>
+
+<!-- ── SCROLL PROGRESS ── -->
+<div id="scrollProgress"></div>
+
+<!-- ── PAGE LOADER ── -->
+<div id="pageLoader">
+  <div class="loader-logo">
+    <div class="loader-logo-icon">&#x1F9E0;</div>
+    <span class="loader-logo-text">PsicoManager</span>
+  </div>
+  <div class="loader-bar"><div class="loader-bar-fill" id="loaderFill"></div></div>
+  <p class="loader-text">Carregando...</p>
+</div>
+<script>
+(function(){
+  var lf = document.getElementById('loaderFill');
+  var pl = document.getElementById('pageLoader');
+  var w  = 0;
+  var t  = setInterval(function(){
+    w += Math.random() * 20 + 10;
+    if (w >= 100) { w = 100; clearInterval(t); setTimeout(function(){ pl.classList.add('hidden'); }, 200); }
+    lf.style.width = w + '%';
+  }, 120);
+  window.addEventListener('scroll', function(){
+    var s = document.documentElement;
+    var p = (s.scrollTop / (s.scrollHeight - s.clientHeight)) * 100;
+    var bar = document.getElementById('scrollProgress');
+    if (bar) bar.style.width = p + '%';
+  });
+})();
+</script>
+</body>
+</html>

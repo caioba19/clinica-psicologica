@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PsicoManager — Dashboard</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/polish.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <style>
+    .welcome-banner {
+      background: linear-gradient(135deg, var(--bg-sidebar) 0%, var(--primary) 100%);
+      border-radius: var(--radius-lg); padding: 28px 32px;
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 28px; position: relative; overflow: hidden;
+    }
+    .welcome-banner::before {
+      content:''; position:absolute; width:300px; height:300px;
+      border-radius:50%; background:rgba(92,184,168,0.12); top:-100px; right:80px;
+    }
+    .welcome-text h2 { font-family:var(--font-display); font-size:22px; font-weight:600; color:#fff; margin-bottom:6px; }
+    .welcome-text p  { font-size:13.5px; color:rgba(255,255,255,0.6); }
+    .welcome-date    { text-align:right; position:relative; z-index:1; }
+    .welcome-date p  { font-size:13px; color:rgba(255,255,255,0.5); }
+    .welcome-date strong { font-size:15px; color:rgba(255,255,255,0.85); font-weight:600; }
+
+    .consulta-item {
+      display:flex; align-items:center; gap:14px; padding:13px 0;
+      border-bottom:1px solid var(--border); transition:var(--transition);
+    }
+    .consulta-item:last-child { border-bottom:none; padding-bottom:0; }
+    .consulta-item:first-child { padding-top:0; }
+    .consulta-hora { width:52px; text-align:center; flex-shrink:0; }
+    .consulta-hora .hora { font-size:14px; font-weight:700; color:var(--primary); line-height:1.2; }
+    .consulta-hora .periodo { font-size:10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.05em; }
+    .consulta-bar { width:3px; height:40px; border-radius:2px; background:linear-gradient(to bottom,var(--accent),var(--primary-light)); flex-shrink:0; }
+    .consulta-info { flex:1; }
+    .consulta-nome { font-size:13.5px; font-weight:600; color:var(--text-primary); }
+    .consulta-tipo { font-size:12px; color:var(--text-muted); margin-top:2px; }
+    .consulta-avatar { width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:#fff; flex-shrink:0; }
+
+    .task-item { display:flex; align-items:center; gap:12px; padding:11px 0; border-bottom:1px solid var(--border); }
+    .task-item:last-child { border-bottom:none; }
+    .task-checkbox { width:18px; height:18px; border-radius:5px; border:2px solid var(--border); cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:var(--transition); background:#fff; font-size:11px; }
+    .task-checkbox.checked { background:var(--accent); border-color:var(--accent); color:#fff; }
+    .task-text { flex:1; font-size:13px; color:var(--text-primary); transition:var(--transition); }
+    .task-text.done { text-decoration:line-through; color:var(--text-muted); }
+    .task-tag { font-size:10px; font-weight:600; padding:2px 8px; border-radius:20px; white-space:nowrap; }
+    .task-tag.urgente { background:rgba(224,92,92,0.1); color:var(--danger); }
+    .task-tag.normal  { background:rgba(44,95,110,0.1); color:var(--primary); }
+    .task-tag.ok      { background:rgba(61,170,114,0.1); color:var(--success); }
+
+    .chart-container { position:relative; height:190px; }
+    .chart-donut     { position:relative; height:110px; width:110px; }
+
+    .activity-item { display:flex; gap:14px; padding:11px 0; border-bottom:1px solid var(--border); }
+    .activity-item:last-child { border-bottom:none; }
+    .activity-dot { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0; margin-top:2px; }
+    .activity-dot.add    { background:rgba(61,170,114,0.12); color:var(--success); }
+    .activity-dot.edit   { background:rgba(44,95,110,0.1);   color:var(--primary); }
+    .activity-dot.pay    { background:rgba(240,165,0,0.12);   color:var(--warning); }
+    .activity-dot.cancel { background:rgba(224,92,92,0.1);    color:var(--danger);  }
+    .activity-msg  { font-size:13px; color:var(--text-primary); }
+    .activity-time { font-size:11.5px; color:var(--text-muted); margin-top:2px; }
+
+    @media(max-width:992px){ .welcome-date{display:none} }
+    @media(max-width:768px){ .grid-2{grid-template-columns:1fr!important} }
+  </style>
+</head>
+<body>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-icon">🧠</div>
+    <div class="sidebar-logo-text">
+      <span class="sidebar-logo-title">PsicoManager</span>
+      <span class="sidebar-logo-subtitle">Gestão Psicológica</span>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <p class="nav-section-label">Principal</p>
+    <div class="nav-item"><a href="dashboard.html" class="nav-link active"><i class="bi bi-grid-1x2 nav-icon"></i>Dashboard</a></div>
+    <div class="nav-item"><a href="agenda.html" class="nav-link"><i class="bi bi-calendar3 nav-icon"></i>Agenda<span class="nav-badge">5</span></a></div>
+    <p class="nav-section-label">Clínica</p>
+    <div class="nav-item"><a href="pacientes-lista.html" class="nav-link"><i class="bi bi-people nav-icon"></i>Pacientes</a></div>
+    <div class="nav-item"><a href="sessoes.html" class="nav-link"><i class="bi bi-journal-medical nav-icon"></i>Sessões / Prontuários</a></div>
+    <p class="nav-section-label">Gestão</p>
+    <div class="nav-item"><a href="financeiro.html" class="nav-link"><i class="bi bi-cash-coin nav-icon"></i>Financeiro</a></div>
+    <div class="nav-item"><a href="relatorios.html" class="nav-link"><i class="bi bi-bar-chart-line nav-icon"></i>Relatórios</a></div>
+    <p class="nav-section-label">Sistema</p>
+    <div class="nav-item"><a href="perfil.html" class="nav-link"><i class="bi bi-person-circle nav-icon"></i>Meu Perfil</a></div>
+    <div class="nav-item"><a href="configuracoes.html" class="nav-link"><i class="bi bi-gear nav-icon"></i>Configurações</a></div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="sidebar-user">
+      <div class="sidebar-user-avatar">DS</div>
+      <div class="sidebar-user-info">
+        <p class="sidebar-user-name">Dra. Sofia Mendes</p>
+        <p class="sidebar-user-role">Psicóloga • Admin</p>
+      </div>
+      <i class="bi bi-three-dots-vertical" style="color:rgba(255,255,255,0.4);font-size:14px"></i>
+    </div>
+  </div>
+</aside>
+
+<header class="topbar">
+  <button class="topbar-toggle" id="sidebarToggle"><i class="bi bi-list"></i></button>
+  <div class="topbar-breadcrumb">
+    <span class="topbar-breadcrumb-title">Dashboard</span>
+    <span class="topbar-breadcrumb-sep"><i class="bi bi-chevron-right" style="font-size:10px"></i></span>
+    <span class="topbar-breadcrumb-sub">Visão Geral</span>
+  </div>
+  <div class="topbar-actions">
+    <div class="topbar-search"><i class="bi bi-search"></i><input type="text" placeholder="Buscar paciente..." /></div>
+    <button class="topbar-btn"><i class="bi bi-bell"></i><span class="topbar-btn-badge"></span></button>
+    <button class="topbar-btn"><i class="bi bi-chat-dots"></i></button>
+    <div class="topbar-divider"></div>
+    <div class="topbar-avatar" onclick="window.location='perfil.html'">DS</div>
+  </div>
+</header>
+
+<main class="main-content">
+
+  <div class="welcome-banner">
+    <div class="welcome-text">
+      <h2>Bom dia, Dra. Sofia 👋</h2>
+      <p>Você tem <strong style="color:var(--accent-soft)">8 consultas</strong> agendadas para hoje. Tenha um ótimo atendimento!</p>
+    </div>
+    <div class="welcome-date">
+      <p>Hoje</p>
+      <strong id="dataHoje">—</strong>
+    </div>
+  </div>
+
+  <div class="grid-4 mb-24">
+    <div class="stat-card">
+      <div class="stat-icon teal"><i class="bi bi-people-fill"></i></div>
+      <div class="stat-info">
+        <p class="stat-value">128</p><p class="stat-label">Pacientes Ativos</p>
+        <p class="stat-change up"><i class="bi bi-arrow-up-short"></i> +8 este mês</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon blue"><i class="bi bi-calendar-check"></i></div>
+      <div class="stat-info">
+        <p class="stat-value">8</p><p class="stat-label">Consultas Hoje</p>
+        <p class="stat-change up"><i class="bi bi-arrow-up-short"></i> +2 vs ontem</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon green"><i class="bi bi-cash-coin"></i></div>
+      <div class="stat-info">
+        <p class="stat-value">R$ 9.240</p><p class="stat-label">Receita do Mês</p>
+        <p class="stat-change up"><i class="bi bi-arrow-up-short"></i> +12%</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon orange"><i class="bi bi-clock-history"></i></div>
+      <div class="stat-info">
+        <p class="stat-value">7</p><p class="stat-label">Pendências</p>
+        <p class="stat-change down"><i class="bi bi-arrow-down-short"></i> -2 vs ontem</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="mb-24" style="display:grid;grid-template-columns:1.2fr 0.8fr;gap:20px">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Consultas de Hoje</h2>
+        <a href="agenda.html" class="btn-ghost" style="font-size:12px;padding:6px 12px">Ver agenda <i class="bi bi-arrow-right"></i></a>
+      </div>
+      <div class="card-body">
+        <div class="consulta-item">
+          <div class="consulta-hora"><div class="hora">08:00</div><div class="periodo">AM</div></div>
+          <div class="consulta-bar"></div>
+          <div class="consulta-info"><div class="consulta-nome">Ana Luíza Ferreira</div><div class="consulta-tipo">Sessão individual · 50min</div></div>
+          <span class="badge badge-success">Confirmado</span>
+          <div class="consulta-avatar" style="background:linear-gradient(135deg,#5CB8A8,#3D7A8A)">AL</div>
+        </div>
+        <div class="consulta-item">
+          <div class="consulta-hora"><div class="hora">09:00</div><div class="periodo">AM</div></div>
+          <div class="consulta-bar" style="background:linear-gradient(to bottom,#F0A500,#E08800)"></div>
+          <div class="consulta-info"><div class="consulta-nome">Carlos Eduardo Lima</div><div class="consulta-tipo">Avaliação psicológica · 90min</div></div>
+          <span class="badge badge-warning">Aguardando</span>
+          <div class="consulta-avatar" style="background:linear-gradient(135deg,#F0A500,#D08000)">CE</div>
+        </div>
+        <div class="consulta-item">
+          <div class="consulta-hora"><div class="hora">10:30</div><div class="periodo">AM</div></div>
+          <div class="consulta-bar"></div>
+          <div class="consulta-info"><div class="consulta-nome">Mariana Santos Oliveira</div><div class="consulta-tipo">Sessão individual · 50min</div></div>
+          <span class="badge badge-success">Confirmado</span>
+          <div class="consulta-avatar" style="background:linear-gradient(135deg,#3DAA72,#2E8B57)">MS</div>
+        </div>
+        <div class="consulta-item">
+          <div class="consulta-hora"><div class="hora">14:00</div><div class="periodo">PM</div></div>
+          <div class="consulta-bar" style="background:linear-gradient(to bottom,#E05C5C,#C04040)"></div>
+          <div class="consulta-info"><div class="consulta-nome">Roberto Alves Costa</div><div class="consulta-tipo">Primeira consulta · 60min</div></div>
+          <span class="badge badge-danger">Urgente</span>
+          <div class="consulta-avatar" style="background:linear-gradient(135deg,#E05C5C,#C04040)">RA</div>
+        </div>
+        <div class="consulta-item">
+          <div class="consulta-hora"><div class="hora">15:30</div><div class="periodo">PM</div></div>
+          <div class="consulta-bar"></div>
+          <div class="consulta-info"><div class="consulta-nome">Juliana Pires Moura</div><div class="consulta-tipo">Sessão individual · 50min</div></div>
+          <span class="badge badge-success">Confirmado</span>
+          <div class="consulta-avatar" style="background:linear-gradient(135deg,#9B59B6,#7D3C98)">JP</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:20px">
+      <div class="card" style="flex:1">
+        <div class="card-header">
+          <h2 class="card-title">Atendimentos</h2>
+          <span style="font-size:12px;color:var(--text-muted)">Últimos 7 dias</span>
+        </div>
+        <div class="card-body">
+          <div class="chart-container"><canvas id="lineChart"></canvas></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h2 class="card-title">Tipos de Sessão</h2></div>
+        <div class="card-body" style="display:flex;align-items:center;gap:20px">
+          <div class="chart-donut"><canvas id="donutChart"></canvas></div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:9px">
+            <div style="display:flex;align-items:center;gap:8px;font-size:12.5px">
+              <span style="width:10px;height:10px;border-radius:50%;background:var(--accent);flex-shrink:0"></span>
+              <span style="flex:1;color:var(--text-secondary)">Individual</span>
+              <strong>68%</strong>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:12.5px">
+              <span style="width:10px;height:10px;border-radius:50%;background:var(--primary);flex-shrink:0"></span>
+              <span style="flex:1;color:var(--text-secondary)">Avaliação</span>
+              <strong>20%</strong>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:12.5px">
+              <span style="width:10px;height:10px;border-radius:50%;background:var(--warning);flex-shrink:0"></span>
+              <span style="flex:1;color:var(--text-secondary)">Grupo</span>
+              <strong>12%</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Tarefas do Dia</h2>
+        <button class="btn-ghost" style="font-size:12px;padding:6px 12px"><i class="bi bi-plus"></i> Nova</button>
+      </div>
+      <div class="card-body">
+        <div class="task-item">
+          <div class="task-checkbox" onclick="toggleTask(this)"></div>
+          <span class="task-text">Enviar relatório mensal para supervisão</span>
+          <span class="task-tag urgente">Urgente</span>
+        </div>
+        <div class="task-item">
+          <div class="task-checkbox" onclick="toggleTask(this)"></div>
+          <span class="task-text">Atualizar prontuário de Ana Luíza</span>
+          <span class="task-tag normal">Normal</span>
+        </div>
+        <div class="task-item">
+          <div class="task-checkbox checked" onclick="toggleTask(this)">✓</div>
+          <span class="task-text done">Confirmar consultas de amanhã</span>
+          <span class="task-tag ok" data-orig="ok" data-orig-text="Feito">Feito</span>
+        </div>
+        <div class="task-item">
+          <div class="task-checkbox" onclick="toggleTask(this)"></div>
+          <span class="task-text">Revisar anamnese de Carlos Eduardo</span>
+          <span class="task-tag normal">Normal</span>
+        </div>
+        <div class="task-item">
+          <div class="task-checkbox" onclick="toggleTask(this)"></div>
+          <span class="task-text">Emitir nota fiscal dos atendimentos</span>
+          <span class="task-tag urgente">Urgente</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Atividade Recente</h2>
+        <span style="font-size:12px;color:var(--text-muted)">Hoje</span>
+      </div>
+      <div class="card-body">
+        <div class="activity-item">
+          <div class="activity-dot add"><i class="bi bi-person-plus-fill"></i></div>
+          <div><p class="activity-msg">Novo paciente <strong>Roberto Alves</strong> cadastrado</p><p class="activity-time">há 12 minutos</p></div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-dot pay"><i class="bi bi-cash"></i></div>
+          <div><p class="activity-msg">Pagamento de <strong>R$ 180</strong> confirmado — Ana Luíza</p><p class="activity-time">há 45 minutos</p></div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-dot edit"><i class="bi bi-pencil"></i></div>
+          <div><p class="activity-msg">Prontuário de <strong>Mariana Santos</strong> atualizado</p><p class="activity-time">há 1 hora</p></div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-dot cancel"><i class="bi bi-calendar-x"></i></div>
+          <div><p class="activity-msg">Consulta de <strong>Pedro Henrique</strong> cancelada</p><p class="activity-time">há 2 horas</p></div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-dot add"><i class="bi bi-calendar-plus"></i></div>
+          <div><p class="activity-msg">Nova consulta agendada — <strong>Juliana Pires</strong></p><p class="activity-time">há 3 horas</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/main.js"></script>
+<script>
+  document.getElementById('dataHoje').textContent =
+    new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'});
+
+  new Chart(document.getElementById('lineChart'),{
+    type:'line',
+    data:{
+      labels:['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'],
+      datasets:[{label:'Atendimentos',data:[6,8,5,9,7,3,0],
+        borderColor:'#5CB8A8',backgroundColor:'rgba(92,184,168,0.1)',
+        borderWidth:2.5,fill:true,tension:0.4,
+        pointBackgroundColor:'#5CB8A8',pointRadius:4,pointHoverRadius:6}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{grid:{display:false},ticks:{font:{size:11},color:'#9AAFBA'}},
+        y:{grid:{color:'#F0F4F7'},ticks:{font:{size:11},color:'#9AAFBA',stepSize:3},beginAtZero:true}
+      }
+    }
+  });
+
+  new Chart(document.getElementById('donutChart'),{
+    type:'doughnut',
+    data:{datasets:[{data:[68,20,12],backgroundColor:['#5CB8A8','#2C5F6E','#F0A500'],borderWidth:0,spacing:2}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'70%',plugins:{legend:{display:false},tooltip:{enabled:false}}}
+  });
+
+  function toggleTask(el){
+    const text=el.nextElementSibling, tag=text.nextElementSibling;
+    if(el.classList.contains('checked')){
+      el.classList.remove('checked');el.textContent='';
+      text.classList.remove('done');
+      tag.className='task-tag '+(tag.dataset.orig||'normal');
+      tag.textContent=tag.dataset.origText||'Normal';
+    } else {
+      if(!tag.dataset.orig){tag.dataset.orig=tag.classList[1];tag.dataset.origText=tag.textContent;}
+      el.classList.add('checked');el.textContent='✓';
+      text.classList.add('done');tag.className='task-tag ok';tag.textContent='Feito';
+    }
+  }
+</script>
+
+<!-- ── SCROLL PROGRESS ── -->
+<div id="scrollProgress"></div>
+
+<!-- ── PAGE LOADER ── -->
+<div id="pageLoader">
+  <div class="loader-logo">
+    <div class="loader-logo-icon">&#x1F9E0;</div>
+    <span class="loader-logo-text">PsicoManager</span>
+  </div>
+  <div class="loader-bar"><div class="loader-bar-fill" id="loaderFill"></div></div>
+  <p class="loader-text">Carregando...</p>
+</div>
+<script>
+(function(){
+  var lf = document.getElementById('loaderFill');
+  var pl = document.getElementById('pageLoader');
+  var w  = 0;
+  var t  = setInterval(function(){
+    w += Math.random() * 20 + 10;
+    if (w >= 100) { w = 100; clearInterval(t); setTimeout(function(){ pl.classList.add('hidden'); }, 200); }
+    lf.style.width = w + '%';
+  }, 120);
+  window.addEventListener('scroll', function(){
+    var s = document.documentElement;
+    var p = (s.scrollTop / (s.scrollHeight - s.clientHeight)) * 100;
+    var bar = document.getElementById('scrollProgress');
+    if (bar) bar.style.width = p + '%';
+  });
+})();
+</script>
+</body>
+</html>

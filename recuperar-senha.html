@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PsicoManager — Recuperar Senha</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-main);
+      padding: 32px 16px;
+    }
+
+    /* Fundo decorativo */
+    body::before {
+      content: '';
+      position: fixed;
+      top: -200px;
+      right: -200px;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(92,184,168,0.1) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      bottom: -150px;
+      left: -150px;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(44,95,110,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .recover-card {
+      width: 100%;
+      max-width: 460px;
+      background: #fff;
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+      position: relative;
+      z-index: 1;
+      animation: fadeUp .45s cubic-bezier(0.4,0,0.2,1) both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Cabeçalho colorido */
+    .recover-header {
+      background: var(--bg-sidebar);
+      padding: 36px 40px 32px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .recover-header::before {
+      content: '';
+      position: absolute;
+      width: 300px;
+      height: 300px;
+      border-radius: 50%;
+      background: rgba(92,184,168,0.12);
+      top: -100px;
+      right: -80px;
+      pointer-events: none;
+    }
+
+    .recover-logo {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 56px;
+      height: 56px;
+      background: linear-gradient(135deg, var(--accent), var(--primary-light));
+      border-radius: 16px;
+      font-size: 26px;
+      margin-bottom: 16px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .recover-header h1 {
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 8px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .recover-header p {
+      font-size: 13.5px;
+      color: rgba(255,255,255,0.55);
+      line-height: 1.6;
+      max-width: 300px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Steps indicator */
+    .steps-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      padding: 24px 40px 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      position: relative;
+      flex: 1;
+    }
+
+    .step:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      top: 15px;
+      left: calc(50% + 16px);
+      right: calc(-50% + 16px);
+      height: 2px;
+      background: rgba(255,255,255,0.15);
+      transition: background .4s;
+    }
+
+    .step.done:not(:last-child)::after,
+    .step.active:not(:last-child)::after {
+      background: var(--accent);
+    }
+
+    .step-circle {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      border: 2px solid rgba(255,255,255,0.2);
+      color: rgba(255,255,255,0.4);
+      background: transparent;
+      transition: all .35s;
+    }
+
+    .step.active .step-circle {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .step.done .step-circle {
+      background: rgba(92,184,168,0.25);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .step-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: rgba(255,255,255,0.35);
+      white-space: nowrap;
+    }
+
+    .step.active .step-label { color: rgba(255,255,255,0.8); }
+    .step.done  .step-label  { color: var(--accent-soft); opacity: 0.8; }
+
+    /* Body */
+    .recover-body {
+      padding: 36px 40px 40px;
+    }
+
+    /* Painéis de step */
+    .step-panel { display: none; }
+    .step-panel.active {
+      display: block;
+      animation: fadeIn .3s ease both;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .step-panel h3 {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+
+    .step-panel .step-desc {
+      font-size: 13.5px;
+      color: var(--text-secondary);
+      margin-bottom: 28px;
+      line-height: 1.6;
+    }
+
+    .step-desc strong { color: var(--primary); }
+
+    .form-group { margin-bottom: 20px; }
+
+    .input-wrapper {
+      position: relative;
+    }
+
+    .input-wrapper .input-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 15px;
+      pointer-events: none;
+      transition: var(--transition);
+    }
+
+    .input-wrapper:focus-within .input-icon { color: var(--accent); }
+    .input-wrapper .form-control { padding-left: 42px; }
+
+    /* Código OTP */
+    .otp-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .otp-input {
+      width: 100%;
+      height: 52px;
+      text-align: center;
+      font-size: 20px;
+      font-weight: 700;
+      font-family: var(--font-body);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-sm);
+      outline: none;
+      transition: var(--transition);
+      color: var(--text-primary);
+      background: #fff;
+    }
+
+    .otp-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(92,184,168,0.12);
+    }
+
+    .otp-input.filled {
+      border-color: var(--accent);
+      background: rgba(92,184,168,0.06);
+    }
+
+    /* Reenviar código */
+    .resend-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 24px;
+    }
+
+    .resend-btn {
+      background: none;
+      border: none;
+      color: var(--primary);
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      transition: var(--transition);
+      font-family: var(--font-body);
+    }
+
+    .resend-btn:hover { color: var(--accent); text-decoration: underline; }
+    .resend-btn:disabled { color: var(--text-muted); cursor: not-allowed; text-decoration: none; }
+
+    .resend-timer { font-weight: 600; color: var(--accent); }
+
+    /* Força da senha */
+    .password-strength {
+      margin-top: 8px;
+    }
+
+    .strength-bar {
+      height: 4px;
+      border-radius: 2px;
+      background: var(--border);
+      margin-bottom: 6px;
+      overflow: hidden;
+    }
+
+    .strength-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width .4s, background .4s;
+      width: 0%;
+    }
+
+    .strength-label {
+      font-size: 11.5px;
+      font-weight: 600;
+    }
+
+    .strength-0 .strength-fill { width: 0%; }
+    .strength-1 .strength-fill { width: 25%; background: var(--danger); }
+    .strength-2 .strength-fill { width: 50%; background: var(--warning); }
+    .strength-3 .strength-fill { width: 75%; background: #7BC67E; }
+    .strength-4 .strength-fill { width: 100%; background: var(--success); }
+
+    .strength-1 .strength-label { color: var(--danger);  }
+    .strength-2 .strength-label { color: var(--warning); }
+    .strength-3 .strength-label { color: #5A9B5D; }
+    .strength-4 .strength-label { color: var(--success); }
+
+    .input-eye {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 15px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 0;
+      line-height: 1;
+      transition: var(--transition);
+    }
+    .input-eye:hover { color: var(--primary); }
+
+    /* Sucesso */
+    .success-icon {
+      width: 72px;
+      height: 72px;
+      background: linear-gradient(135deg, var(--accent), var(--success));
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 30px;
+      color: #fff;
+      margin: 0 auto 24px;
+      animation: popIn .45s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+
+    @keyframes popIn {
+      from { transform: scale(0); opacity: 0; }
+      to   { transform: scale(1); opacity: 1; }
+    }
+
+    .success-panel { text-align: center; }
+
+    .success-panel h3 { font-size: 20px; margin-bottom: 10px; }
+
+    .success-panel .step-desc { margin-bottom: 32px; }
+
+    /* Botão principal */
+    .btn-recover {
+      width: 100%;
+      padding: 13px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 14.5px;
+      font-weight: 600;
+      font-family: var(--font-body);
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-recover:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(44,95,110,0.3);
+    }
+
+    .btn-recover:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .back-link {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin-top: 20px;
+      font-size: 13.5px;
+      color: var(--text-secondary);
+    }
+
+    .back-link a {
+      color: var(--primary);
+      font-weight: 500;
+      transition: var(--transition);
+    }
+
+    .back-link a:hover { color: var(--accent); text-decoration: underline; }
+
+    .alert-error {
+      display: none;
+      background: rgba(224,92,92,0.08);
+      border: 1px solid rgba(224,92,92,0.25);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      font-size: 13px;
+      color: var(--danger);
+      margin-bottom: 18px;
+      align-items: center;
+      gap: 9px;
+    }
+    .alert-error.show { display: flex; }
+
+    @media (max-width: 480px) {
+      .recover-header { padding: 28px 24px 24px; }
+      .recover-body { padding: 28px 24px 32px; }
+      .steps-bar { padding: 20px 24px 0; gap: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="recover-card">
+
+  <!-- Header -->
+  <div class="recover-header">
+    <div class="recover-logo">🔐</div>
+    <h1>Recuperar Senha</h1>
+    <p>Siga os passos abaixo para redefinir o acesso à sua conta</p>
+
+    <!-- Steps -->
+    <div class="steps-bar">
+      <div class="step active" id="step-ind-1">
+        <div class="step-circle">1</div>
+        <span class="step-label">E-mail</span>
+      </div>
+      <div class="step" id="step-ind-2">
+        <div class="step-circle">2</div>
+        <span class="step-label">Código</span>
+      </div>
+      <div class="step" id="step-ind-3">
+        <div class="step-circle">3</div>
+        <span class="step-label">Nova Senha</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Body -->
+  <div class="recover-body">
+
+    <!-- STEP 1: E-mail -->
+    <div class="step-panel active" id="panel-1">
+      <h3>Informe seu e-mail</h3>
+      <p class="step-desc">
+        Digite o e-mail cadastrado na sua conta. Enviaremos um código de verificação.
+      </p>
+
+      <div class="alert-error" id="err1">
+        <i class="bi bi-exclamation-circle"></i>
+        <span id="errMsg1">E-mail não encontrado no sistema.</span>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="emailRecover">E-mail</label>
+        <div class="input-wrapper">
+          <i class="bi bi-envelope input-icon"></i>
+          <input type="email" id="emailRecover" class="form-control" placeholder="seu@email.com" autocomplete="email" />
+        </div>
+      </div>
+
+      <button class="btn-recover" id="btn1" onclick="goStep2()">
+        <i class="bi bi-send"></i> Enviar código de verificação
+      </button>
+    </div>
+
+    <!-- STEP 2: Código OTP -->
+    <div class="step-panel" id="panel-2">
+      <h3>Código de verificação</h3>
+      <p class="step-desc">
+        Enviamos um código de 6 dígitos para <strong id="emailDisplay">—</strong>.<br>
+        Verifique também sua caixa de spam.
+      </p>
+
+      <div class="alert-error" id="err2">
+        <i class="bi bi-exclamation-circle"></i>
+        <span>Código inválido ou expirado. Tente novamente.</span>
+      </div>
+
+      <div class="otp-grid" id="otpGrid">
+        <input type="text" class="otp-input" maxlength="1" inputmode="numeric" />
+        <input type="text" class="otp-input" maxlength="1" inputmode="numeric" />
+        <input type="text" class="otp-input" maxlength="1" inputmode="numeric" />
+        <input type="text" class="otp-input" maxlength="1" inputmode="numeric" />
+        <input type="text" class="otp-input" maxlength="1" inputmode="numeric" />
+        <input type="text" class="otp-input" maxlength="1" inputmode="numeric" />
+      </div>
+
+      <div class="resend-row">
+        Não recebeu?
+        <button class="resend-btn" id="resendBtn" onclick="resendCode()">Reenviar</button>
+        <span class="resend-timer" id="resendTimer"></span>
+      </div>
+
+      <button class="btn-recover" id="btn2" onclick="goStep3()" disabled>
+        <i class="bi bi-check-circle"></i> Verificar código
+      </button>
+    </div>
+
+    <!-- STEP 3: Nova senha -->
+    <div class="step-panel" id="panel-3">
+      <h3>Crie uma nova senha</h3>
+      <p class="step-desc">
+        Sua nova senha deve ter pelo menos 8 caracteres, incluindo letras e números.
+      </p>
+
+      <div class="alert-error" id="err3">
+        <i class="bi bi-exclamation-circle"></i>
+        <span id="errMsg3">As senhas não coincidem.</span>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="novaSenha">Nova senha</label>
+        <div class="input-wrapper">
+          <i class="bi bi-lock input-icon"></i>
+          <input type="password" id="novaSenha" class="form-control" placeholder="Mínimo 8 caracteres" oninput="checkStrength(this.value)" />
+          <button type="button" class="input-eye" onclick="togglePass('novaSenha', this)">
+            <i class="bi bi-eye"></i>
+          </button>
+        </div>
+        <div class="password-strength strength-0" id="strengthWrap">
+          <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
+          <span class="strength-label" id="strengthLabel"></span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="confirmSenha">Confirmar senha</label>
+        <div class="input-wrapper">
+          <i class="bi bi-lock-fill input-icon"></i>
+          <input type="password" id="confirmSenha" class="form-control" placeholder="Repita a senha" />
+          <button type="button" class="input-eye" onclick="togglePass('confirmSenha', this)">
+            <i class="bi bi-eye"></i>
+          </button>
+        </div>
+      </div>
+
+      <button class="btn-recover" onclick="goSuccess()">
+        <i class="bi bi-arrow-repeat"></i> Redefinir senha
+      </button>
+    </div>
+
+    <!-- STEP 4: Sucesso -->
+    <div class="step-panel" id="panel-success">
+      <div class="success-panel">
+        <div class="success-icon">✓</div>
+        <h3>Senha redefinida!</h3>
+        <p class="step-desc">
+          Sua senha foi alterada com sucesso.<br>
+          Você já pode fazer login com as novas credenciais.
+        </p>
+        <button class="btn-recover" onclick="window.location.href='index.html'">
+          <i class="bi bi-box-arrow-in-right"></i> Ir para o login
+        </button>
+      </div>
+    </div>
+
+    <!-- Voltar ao login -->
+    <div class="back-link" id="backLinkRow">
+      <i class="bi bi-arrow-left" style="font-size:12px"></i>
+      <a href="index.html">Voltar ao login</a>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  // ── NAVEGAÇÃO ENTRE STEPS ──
+  function setStep(n) {
+    document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.step').forEach((s, i) => {
+      s.classList.remove('active', 'done');
+      if (i + 1 < n)  s.classList.add('done');
+      if (i + 1 === n) s.classList.add('active');
+    });
+    const panel = n === 4 ? 'panel-success' : `panel-${n}`;
+    document.getElementById(panel).classList.add('active');
+    if (n === 4) document.getElementById('backLinkRow').style.display = 'none';
+  }
+
+  // STEP 1 → 2
+  function goStep2() {
+    const email = document.getElementById('emailRecover').value.trim();
+    const err = document.getElementById('err1');
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      document.getElementById('errMsg1').textContent = 'Informe um e-mail válido.';
+      err.classList.add('show'); return;
+    }
+    err.classList.remove('show');
+    document.getElementById('emailDisplay').textContent = email;
+    setStep(2);
+    startResendTimer();
+    setupOTP();
+  }
+
+  // STEP 2 → 3
+  function goStep3() {
+    const inputs = document.querySelectorAll('.otp-input');
+    const code = [...inputs].map(i => i.value).join('');
+    const err = document.getElementById('err2');
+    if (code.length < 6) { err.classList.add('show'); return; }
+    // Demo: código correto = 123456
+    if (code !== '123456') { err.classList.add('show'); return; }
+    err.classList.remove('show');
+    setStep(3);
+  }
+
+  // STEP 3 → Sucesso
+  function goSuccess() {
+    const nova    = document.getElementById('novaSenha').value;
+    const confirm = document.getElementById('confirmSenha').value;
+    const err = document.getElementById('err3');
+    if (nova.length < 8) {
+      document.getElementById('errMsg3').textContent = 'A senha deve ter pelo menos 8 caracteres.';
+      err.classList.add('show'); return;
+    }
+    if (nova !== confirm) {
+      document.getElementById('errMsg3').textContent = 'As senhas não coincidem.';
+      err.classList.add('show'); return;
+    }
+    err.classList.remove('show');
+    setStep(4);
+  }
+
+  // ── OTP ──
+  function setupOTP() {
+    const inputs = document.querySelectorAll('.otp-input');
+    inputs.forEach((inp, idx) => {
+      inp.value = '';
+      inp.classList.remove('filled');
+      inp.addEventListener('input', () => {
+        inp.value = inp.value.replace(/\D/g, '').slice(-1);
+        if (inp.value) {
+          inp.classList.add('filled');
+          if (idx < inputs.length - 1) inputs[idx + 1].focus();
+        } else {
+          inp.classList.remove('filled');
+        }
+        const filled = [...inputs].filter(i => i.value).length;
+        document.getElementById('btn2').disabled = filled < 6;
+        document.getElementById('err2').classList.remove('show');
+      });
+      inp.addEventListener('keydown', e => {
+        if (e.key === 'Backspace' && !inp.value && idx > 0) inputs[idx - 1].focus();
+      });
+      inp.addEventListener('paste', e => {
+        e.preventDefault();
+        const text = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+        [...text].forEach((c, i) => {
+          if (inputs[i]) { inputs[i].value = c; inputs[i].classList.add('filled'); }
+        });
+        const last = Math.min(text.length, inputs.length - 1);
+        inputs[last].focus();
+        document.getElementById('btn2').disabled = text.length < 6;
+      });
+    });
+    setTimeout(() => inputs[0].focus(), 100);
+  }
+
+  // ── REENVIAR TIMER ──
+  let timerInterval;
+  function startResendTimer() {
+    const btn   = document.getElementById('resendBtn');
+    const timer = document.getElementById('resendTimer');
+    let secs = 60;
+    btn.disabled = true;
+    timer.textContent = `(${secs}s)`;
+    timerInterval = setInterval(() => {
+      secs--;
+      timer.textContent = secs > 0 ? `(${secs}s)` : '';
+      if (secs <= 0) {
+        clearInterval(timerInterval);
+        btn.disabled = false;
+      }
+    }, 1000);
+  }
+
+  function resendCode() {
+    document.querySelectorAll('.otp-input').forEach(i => { i.value = ''; i.classList.remove('filled'); });
+    document.getElementById('btn2').disabled = true;
+    document.getElementById('err2').classList.remove('show');
+    startResendTimer();
+    setTimeout(() => document.querySelectorAll('.otp-input')[0].focus(), 100);
+  }
+
+  // ── FORÇA DA SENHA ──
+  function checkStrength(val) {
+    let score = 0;
+    if (val.length >= 8)  score++;
+    if (/[A-Z]/.test(val)) score++;
+    if (/[0-9]/.test(val)) score++;
+    if (/[^A-Za-z0-9]/.test(val)) score++;
+    const labels = ['', 'Fraca', 'Razoável', 'Boa', 'Forte'];
+    const wrap  = document.getElementById('strengthWrap');
+    wrap.className = `password-strength strength-${score}`;
+    document.getElementById('strengthLabel').textContent = val.length ? labels[score] : '';
+  }
+
+  // ── TOGGLE VER SENHA ──
+  function togglePass(id, btn) {
+    const inp = document.getElementById(id);
+    const icon = btn.querySelector('i');
+    if (inp.type === 'password') {
+      inp.type = 'text';
+      icon.className = 'bi bi-eye-slash';
+    } else {
+      inp.type = 'password';
+      icon.className = 'bi bi-eye';
+    }
+  }
+</script>
+</body>
+</html>

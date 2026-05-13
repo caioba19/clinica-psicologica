@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PsicoManager — Financeiro</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/polish.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <style>
+    .fin-summary-card {
+      background: var(--bg-card);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      padding: 22px 24px;
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      box-shadow: var(--shadow-sm);
+      transition: var(--transition);
+    }
+    .fin-summary-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+
+    .fin-summary-card.receita { border-left: 4px solid var(--success); }
+    .fin-summary-card.despesa { border-left: 4px solid var(--danger); }
+    .fin-summary-card.saldo   { border-left: 4px solid var(--accent); }
+    .fin-summary-card.pendente{ border-left: 4px solid var(--warning); }
+
+    .fin-icon {
+      width: 46px; height: 46px; border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; flex-shrink: 0;
+    }
+
+    .chart-area { position: relative; height: 220px; }
+
+    .periodo-tabs {
+      display: flex; gap: 4px;
+      background: var(--bg-main);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 4px;
+    }
+    .periodo-tab {
+      padding: 6px 14px; border-radius: 6px;
+      font-size: 12.5px; font-weight: 500;
+      color: var(--text-secondary); cursor: pointer;
+      transition: var(--transition); border: none;
+      background: none; font-family: var(--font-body);
+    }
+    .periodo-tab.active {
+      background: #fff;
+      color: var(--primary);
+      font-weight: 600;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .lancamento-row {
+      display: flex; align-items: center; gap: 14px;
+      padding: 13px 0; border-bottom: 1px solid var(--border);
+      transition: var(--transition);
+    }
+    .lancamento-row:last-child { border-bottom: none; }
+    .lancamento-row:hover { background: rgba(92,184,168,0.03); margin: 0 -8px; padding-left: 8px; padding-right: 8px; border-radius: 8px; }
+
+    .lanc-icon {
+      width: 36px; height: 36px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; flex-shrink: 0;
+    }
+    .lanc-icon.entrada { background: rgba(61,170,114,0.12); color: var(--success); }
+    .lanc-icon.saida   { background: rgba(224,92,92,0.12);  color: var(--danger); }
+
+    .lanc-info { flex: 1; min-width: 0; }
+    .lanc-desc { font-size: 13.5px; font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .lanc-cat  { font-size: 11.5px; color: var(--text-muted); margin-top: 1px; }
+    .lanc-valor { font-size: 14px; font-weight: 700; white-space: nowrap; }
+    .lanc-valor.entrada { color: var(--success); }
+    .lanc-valor.saida   { color: var(--danger); }
+    .lanc-data { font-size: 11.5px; color: var(--text-muted); white-space: nowrap; margin-left: 8px; }
+
+    .progress-meta { margin-bottom: 16px; }
+    .progress-meta:last-child { margin-bottom: 0; }
+    .progress-label { display: flex; justify-content: space-between; font-size: 12.5px; margin-bottom: 6px; }
+    .progress-label span:first-child { font-weight: 500; color: var(--text-primary); }
+    .progress-label span:last-child  { color: var(--text-secondary); }
+    .progress-bar-wrap { height: 8px; background: var(--bg-main); border-radius: 4px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 4px; transition: width .6s ease; }
+
+    /* Modal Lançamento */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45); z-index: 2000;
+      align-items: center; justify-content: center;
+      backdrop-filter: blur(3px);
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-box {
+      background: #fff; border-radius: var(--radius-lg);
+      width: 100%; max-width: 480px; margin: 16px;
+      box-shadow: var(--shadow-lg);
+      animation: fadeUp .3s cubic-bezier(0.4,0,0.2,1) both;
+    }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 24px; border-bottom: 1px solid var(--border);
+    }
+    .modal-title { font-family: var(--font-display); font-size: 17px; font-weight: 600; color: var(--text-primary); }
+    .modal-close { width: 32px; height: 32px; border-radius: 8px; background: var(--bg-main); border: none; cursor: pointer; font-size: 18px; color: var(--text-muted); display: flex; align-items: center; justify-content: center; transition: var(--transition); }
+    .modal-close:hover { background: var(--border); color: var(--text-primary); }
+    .modal-body { padding: 24px; }
+    .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; }
+
+    .tipo-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; }
+    .tipo-btn {
+      padding: 10px; border-radius: var(--radius-sm); border: 2px solid var(--border);
+      background: #fff; font-size: 13.5px; font-weight: 600; cursor: pointer;
+      font-family: var(--font-body); transition: var(--transition);
+      display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--text-secondary);
+    }
+    .tipo-btn.entrada.active { border-color: var(--success); background: rgba(61,170,114,0.07); color: var(--success); }
+    .tipo-btn.saida.active   { border-color: var(--danger);  background: rgba(224,92,92,0.07);  color: var(--danger); }
+
+    .form-group { margin-bottom: 16px; }
+    .form-row   { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  </style>
+</head>
+<body>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-icon">🧠</div>
+    <div class="sidebar-logo-text">
+      <span class="sidebar-logo-title">PsicoManager</span>
+      <span class="sidebar-logo-subtitle">Gestão Psicológica</span>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <p class="nav-section-label">Principal</p>
+    <div class="nav-item"><a href="dashboard.html" class="nav-link"><i class="bi bi-grid-1x2 nav-icon"></i>Dashboard</a></div>
+    <div class="nav-item"><a href="agenda.html" class="nav-link"><i class="bi bi-calendar3 nav-icon"></i>Agenda<span class="nav-badge">5</span></a></div>
+    <p class="nav-section-label">Clínica</p>
+    <div class="nav-item"><a href="pacientes-lista.html" class="nav-link"><i class="bi bi-people nav-icon"></i>Pacientes</a></div>
+    <div class="nav-item"><a href="sessoes.html" class="nav-link"><i class="bi bi-journal-medical nav-icon"></i>Sessões / Prontuários</a></div>
+    <p class="nav-section-label">Gestão</p>
+    <div class="nav-item"><a href="financeiro.html" class="nav-link active"><i class="bi bi-cash-coin nav-icon"></i>Financeiro</a></div>
+    <div class="nav-item"><a href="relatorios.html" class="nav-link"><i class="bi bi-bar-chart-line nav-icon"></i>Relatórios</a></div>
+    <p class="nav-section-label">Sistema</p>
+    <div class="nav-item"><a href="perfil.html" class="nav-link"><i class="bi bi-person-circle nav-icon"></i>Meu Perfil</a></div>
+    <div class="nav-item"><a href="configuracoes.html" class="nav-link"><i class="bi bi-gear nav-icon"></i>Configurações</a></div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="sidebar-user">
+      <div class="sidebar-user-avatar">DS</div>
+      <div class="sidebar-user-info">
+        <p class="sidebar-user-name">Dra. Sofia Mendes</p>
+        <p class="sidebar-user-role">Psicóloga • Admin</p>
+      </div>
+      <i class="bi bi-three-dots-vertical" style="color:rgba(255,255,255,0.4);font-size:14px"></i>
+    </div>
+  </div>
+</aside>
+
+<header class="topbar">
+  <button class="topbar-toggle" id="sidebarToggle"><i class="bi bi-list"></i></button>
+  <div class="topbar-breadcrumb">
+    <span class="topbar-breadcrumb-title">Financeiro</span>
+    <span class="topbar-breadcrumb-sep"><i class="bi bi-chevron-right" style="font-size:10px"></i></span>
+    <span class="topbar-breadcrumb-sub">Maio 2025</span>
+  </div>
+  <div class="topbar-actions">
+    <div class="topbar-search"><i class="bi bi-search"></i><input type="text" placeholder="Buscar lançamento..." /></div>
+    <button class="topbar-btn"><i class="bi bi-bell"></i><span class="topbar-btn-badge"></span></button>
+    <button class="topbar-btn"><i class="bi bi-chat-dots"></i></button>
+    <div class="topbar-divider"></div>
+    <div class="topbar-avatar" onclick="window.location='perfil.html'">DS</div>
+  </div>
+</header>
+
+<main class="main-content">
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Financeiro</h1>
+      <p class="page-subtitle">Controle de receitas, despesas e fluxo de caixa</p>
+    </div>
+    <div class="d-flex gap-8">
+      <div class="periodo-tabs">
+        <button class="periodo-tab" onclick="setPeriodo(this,'Fev')">Fev</button>
+        <button class="periodo-tab" onclick="setPeriodo(this,'Mar')">Mar</button>
+        <button class="periodo-tab" onclick="setPeriodo(this,'Abr')">Abr</button>
+        <button class="periodo-tab active" onclick="setPeriodo(this,'Mai')">Mai</button>
+      </div>
+      <button class="btn-accent" onclick="openModal()"><i class="bi bi-plus-lg"></i> Novo Lançamento</button>
+    </div>
+  </div>
+
+  <!-- Cards de resumo -->
+  <div class="grid-4 mb-24">
+    <div class="fin-summary-card receita">
+      <div class="fin-icon" style="background:rgba(61,170,114,0.12);color:var(--success)"><i class="bi bi-graph-up-arrow"></i></div>
+      <div>
+        <p class="stat-value">R$ 12.480</p>
+        <p class="stat-label">Receitas</p>
+        <p class="stat-change up"><i class="bi bi-arrow-up-short"></i> +14% vs abr</p>
+      </div>
+    </div>
+    <div class="fin-summary-card despesa">
+      <div class="fin-icon" style="background:rgba(224,92,92,0.12);color:var(--danger)"><i class="bi bi-graph-down-arrow"></i></div>
+      <div>
+        <p class="stat-value">R$ 3.150</p>
+        <p class="stat-label">Despesas</p>
+        <p class="stat-change down"><i class="bi bi-arrow-up-short"></i> +5% vs abr</p>
+      </div>
+    </div>
+    <div class="fin-summary-card saldo">
+      <div class="fin-icon" style="background:rgba(92,184,168,0.15);color:var(--accent)"><i class="bi bi-wallet2"></i></div>
+      <div>
+        <p class="stat-value">R$ 9.330</p>
+        <p class="stat-label">Saldo do Mês</p>
+        <p class="stat-change up"><i class="bi bi-arrow-up-short"></i> +18%</p>
+      </div>
+    </div>
+    <div class="fin-summary-card pendente">
+      <div class="fin-icon" style="background:rgba(240,165,0,0.15);color:var(--warning)"><i class="bi bi-clock"></i></div>
+      <div>
+        <p class="stat-value">R$ 1.680</p>
+        <p class="stat-label">A Receber</p>
+        <p class="stat-change" style="color:var(--warning)"><i class="bi bi-dot"></i> 4 pagamentos</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gráfico + Categorias -->
+  <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:20px" class="mb-24">
+
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Fluxo de Caixa — 2025</h2>
+        <div class="d-flex gap-12 align-center" style="font-size:12px;color:var(--text-muted)">
+          <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:50%;background:var(--success);display:inline-block"></span>Receitas</span>
+          <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:50%;background:var(--danger);display:inline-block"></span>Despesas</span>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="chart-area">
+          <canvas id="fluxoChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h2 class="card-title">Despesas por Categoria</h2></div>
+      <div class="card-body">
+        <div class="progress-meta">
+          <div class="progress-label"><span>Aluguel / Espaço</span><span>R$ 1.200 · 38%</span></div>
+          <div class="progress-bar-wrap"><div class="progress-fill" style="width:38%;background:var(--primary)"></div></div>
+        </div>
+        <div class="progress-meta">
+          <div class="progress-label"><span>Plataformas / Software</span><span>R$ 680 · 22%</span></div>
+          <div class="progress-bar-wrap"><div class="progress-fill" style="width:22%;background:var(--accent)"></div></div>
+        </div>
+        <div class="progress-meta">
+          <div class="progress-label"><span>Marketing</span><span>R$ 490 · 16%</span></div>
+          <div class="progress-bar-wrap"><div class="progress-fill" style="width:16%;background:var(--warning)"></div></div>
+        </div>
+        <div class="progress-meta">
+          <div class="progress-label"><span>Materiais de escritório</span><span>R$ 380 · 12%</span></div>
+          <div class="progress-bar-wrap"><div class="progress-fill" style="width:12%;background:#9B59B6"></div></div>
+        </div>
+        <div class="progress-meta">
+          <div class="progress-label"><span>Outros</span><span>R$ 400 · 12%</span></div>
+          <div class="progress-bar-wrap"><div class="progress-fill" style="width:12%;background:var(--text-muted)"></div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Tabela de lançamentos -->
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Lançamentos Recentes</h2>
+      <div class="d-flex gap-8">
+        <select class="form-control" style="width:auto;padding:6px 12px;font-size:12.5px" onchange="filtrarLanc(this.value)">
+          <option value="todos">Todos</option>
+          <option value="entrada">Entradas</option>
+          <option value="saida">Saídas</option>
+          <option value="pendente">Pendentes</option>
+        </select>
+        <button class="btn-ghost" style="font-size:12.5px"><i class="bi bi-download"></i> Exportar</button>
+      </div>
+    </div>
+    <div class="card-body" id="lancamentosContainer">
+      <!-- gerado por JS -->
+    </div>
+    <div style="padding:12px 24px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:12.5px;color:var(--text-muted)">Exibindo 8 de 34 lançamentos</span>
+      <div class="d-flex gap-8">
+        <button class="btn-ghost" style="font-size:12.5px;padding:6px 12px"><i class="bi bi-chevron-left"></i></button>
+        <button class="btn-ghost" style="font-size:12.5px;padding:6px 12px">1</button>
+        <button class="btn-primary" style="font-size:12.5px;padding:6px 12px">2</button>
+        <button class="btn-ghost" style="font-size:12.5px;padding:6px 12px">3</button>
+        <button class="btn-ghost" style="font-size:12.5px;padding:6px 12px"><i class="bi bi-chevron-right"></i></button>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- Modal Novo Lançamento -->
+<div class="modal-overlay" id="modalLanc">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 class="modal-title">Novo Lançamento</h3>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="tipo-toggle">
+        <button class="tipo-btn entrada active" id="tipoEntrada" onclick="setTipo('entrada')">
+          <i class="bi bi-arrow-down-circle"></i> Entrada
+        </button>
+        <button class="tipo-btn saida" id="tipoSaida" onclick="setTipo('saida')">
+          <i class="bi bi-arrow-up-circle"></i> Saída
+        </button>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Descrição</label>
+        <input type="text" class="form-control" placeholder="Ex: Sessão Ana Luíza" />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Valor (R$)</label>
+          <input type="text" class="form-control" placeholder="0,00" id="valorLanc" oninput="maskMoeda(this)" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Data</label>
+          <input type="date" class="form-control" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Categoria</label>
+          <select class="form-control">
+            <option>Consulta / Sessão</option>
+            <option>Avaliação</option>
+            <option>Aluguel</option>
+            <option>Software / Plataforma</option>
+            <option>Marketing</option>
+            <option>Materiais</option>
+            <option>Outros</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select class="form-control">
+            <option>Pago / Recebido</option>
+            <option>Pendente</option>
+            <option>Agendado</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Observação (opcional)</label>
+        <textarea class="form-control" rows="2" placeholder="Anotações adicionais..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn-accent" onclick="salvarLanc()"><i class="bi bi-check-lg"></i> Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/main.js"></script>
+<script>
+// ── DADOS MOCK ──
+const lancamentos = [
+  { tipo:'entrada', desc:'Sessão — Ana Luíza Ferreira',    cat:'Consulta',    valor:180, data:'12/05', status:'recebido' },
+  { tipo:'entrada', desc:'Sessão — Carlos Eduardo Lima',   cat:'Avaliação',   valor:280, data:'12/05', status:'recebido' },
+  { tipo:'saida',   desc:'Aluguel sala clínica',           cat:'Aluguel',     valor:1200,data:'10/05', status:'pago'     },
+  { tipo:'entrada', desc:'Sessão — Mariana Santos',        cat:'Consulta',    valor:180, data:'10/05', status:'recebido' },
+  { tipo:'saida',   desc:'Assinatura ProntuárioOnline',    cat:'Software',    valor:89,  data:'08/05', status:'pago'     },
+  { tipo:'entrada', desc:'Sessão — Juliana Pires',         cat:'Consulta',    valor:180, data:'08/05', status:'pendente' },
+  { tipo:'entrada', desc:'Sessão — Roberto Alves',         cat:'Consulta',    valor:200, data:'07/05', status:'pendente' },
+  { tipo:'saida',   desc:'Material de escritório',         cat:'Materiais',   valor:156, data:'05/05', status:'pago'     },
+];
+
+function renderLanc(lista) {
+  const c = document.getElementById('lancamentosContainer');
+  c.innerHTML = lista.map(l => `
+    <div class="lancamento-row">
+      <div class="lanc-icon ${l.tipo}">
+        <i class="bi ${l.tipo === 'entrada' ? 'bi-arrow-down-circle' : 'bi-arrow-up-circle'}"></i>
+      </div>
+      <div class="lanc-info">
+        <p class="lanc-desc">${l.desc}</p>
+        <p class="lanc-cat">${l.cat}</p>
+      </div>
+      <span class="badge ${l.status === 'pendente' ? 'badge-warning' : 'badge-success'}">${l.status === 'pendente' ? 'Pendente' : l.tipo === 'entrada' ? 'Recebido' : 'Pago'}</span>
+      <p class="lanc-valor ${l.tipo}">
+        ${l.tipo === 'entrada' ? '+' : '-'} R$ ${l.valor.toFixed(2).replace('.',',')}
+      </p>
+      <span class="lanc-data">${l.data}</span>
+      <button class="topbar-btn" style="width:28px;height:28px"><i class="bi bi-three-dots-vertical" style="font-size:13px"></i></button>
+    </div>
+  `).join('');
+}
+
+renderLanc(lancamentos);
+
+function filtrarLanc(v) {
+  if (v === 'todos') return renderLanc(lancamentos);
+  if (v === 'pendente') return renderLanc(lancamentos.filter(l => l.status === 'pendente'));
+  renderLanc(lancamentos.filter(l => l.tipo === v));
+}
+
+// ── GRÁFICO ──
+const ctx = document.getElementById('fluxoChart').getContext('2d');
+new Chart(ctx, {
+  type: 'bar',
+  data: {
+    labels: ['Jan','Fev','Mar','Abr','Mai','Jun'],
+    datasets: [
+      {
+        label: 'Receitas',
+        data: [8200, 9400, 10100, 10940, 12480, 0],
+        backgroundColor: 'rgba(61,170,114,0.7)',
+        borderRadius: 6,
+      },
+      {
+        label: 'Despesas',
+        data: [2800, 2950, 3100, 2990, 3150, 0],
+        backgroundColor: 'rgba(224,92,92,0.65)',
+        borderRadius: 6,
+      }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { display: false }, ticks: { font: { size: 12 } } },
+      y: {
+        grid: { color: 'rgba(0,0,0,0.05)' },
+        ticks: { font: { size: 11 }, callback: v => 'R$ ' + (v/1000).toFixed(0) + 'k' }
+      }
+    }
+  }
+});
+
+// ── MODAL ──
+function openModal()  { document.getElementById('modalLanc').classList.add('open'); }
+function closeModal() { document.getElementById('modalLanc').classList.remove('open'); }
+function setTipo(t) {
+  document.getElementById('tipoEntrada').classList.toggle('active', t==='entrada');
+  document.getElementById('tipoSaida').classList.toggle('active', t==='saida');
+}
+function maskMoeda(el) {
+  let v = el.value.replace(/\D/g,'');
+  v = (parseInt(v||0)/100).toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+  el.value = v;
+}
+function salvarLanc() {
+  closeModal();
+  showToast('Lançamento salvo com sucesso!', 'success');
+}
+
+function setPeriodo(btn, p) {
+  document.querySelectorAll('.periodo-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+</script>
+
+<!-- ── SCROLL PROGRESS ── -->
+<div id="scrollProgress"></div>
+
+<!-- ── PAGE LOADER ── -->
+<div id="pageLoader">
+  <div class="loader-logo">
+    <div class="loader-logo-icon">&#x1F9E0;</div>
+    <span class="loader-logo-text">PsicoManager</span>
+  </div>
+  <div class="loader-bar"><div class="loader-bar-fill" id="loaderFill"></div></div>
+  <p class="loader-text">Carregando...</p>
+</div>
+<script>
+(function(){
+  var lf = document.getElementById('loaderFill');
+  var pl = document.getElementById('pageLoader');
+  var w  = 0;
+  var t  = setInterval(function(){
+    w += Math.random() * 20 + 10;
+    if (w >= 100) { w = 100; clearInterval(t); setTimeout(function(){ pl.classList.add('hidden'); }, 200); }
+    lf.style.width = w + '%';
+  }, 120);
+  window.addEventListener('scroll', function(){
+    var s = document.documentElement;
+    var p = (s.scrollTop / (s.scrollHeight - s.clientHeight)) * 100;
+    var bar = document.getElementById('scrollProgress');
+    if (bar) bar.style.width = p + '%';
+  });
+})();
+</script>
+</body>
+</html>
