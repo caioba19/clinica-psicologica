@@ -1,0 +1,88 @@
+/* Variáveis de Tema Escuro */
+[data-theme="dark"], body.dark-theme {
+  --bg-main: #12181b;
+  --bg-card: #1b2428;
+  --bg-sidebar: #0f1c21;
+  --text-primary: #e6edf0;
+  --text-secondary: #9cb1b8;
+  --text-muted: #748c94;
+  --border: #2b393f;
+  background-color: var(--bg-main) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .card,
+[data-theme="dark"] .stat-card,
+[data-theme="dark"] .modal-box,
+[data-theme="dark"] .topbar,
+[data-theme="dark"] .card-header,
+[data-theme="dark"] .card-footer {
+  background-color: var(--bg-card) !important;
+  border-color: var(--border) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .card-title,
+[data-theme="dark"] .stat-value,
+[data-theme="dark"] .page-title,
+[data-theme="dark"] .modal-title {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .table {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .table thead th {
+  background-color: #151d21 !important;
+  border-color: var(--border) !important;
+  color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] .table td,
+[data-theme="dark"] .table th {
+  border-color: var(--border) !important;
+}
+
+[data-theme="dark"] .form-control,
+[data-theme="dark"] .form-select,
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background-color: #151d21 !important;
+  border-color: var(--border) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .input-group-text {
+  background-color: #151d21 !important;
+  border-color: var(--border) !important;
+  color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] .btn-ghost,
+[data-theme="dark"] .action-btn,
+[data-theme="dark"] .topbar-btn {
+  background-color: #151d21 !important;
+  border-color: var(--border) !important;
+  color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] .bg-light {
+  background-color: #151d21 !important;
+}
+
+[data-theme="dark"] .topbar-search {
+  background-color: #151d21 !important;
+  border-color: var(--border) !important;
+  color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] .topbar-search input {
+  color: var(--text-primary) !important;
+}
+
+/* Transições suaves */
+body, .card, .topbar, .sidebar, .modal-box {
+  transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+}

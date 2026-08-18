@@ -1,0 +1,49 @@
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700&display=swap");
+
+:root {
+  --color-bg: #f5f1e8;
+  --color-surface: #fffdf8;
+  --color-ink: #2b2620;
+  --color-ink-soft: #6b6153;
+  --color-olive: #3f4a34;
+  --color-olive-deep: #2c3524;
+  --color-terracotta: #c1613f;
+  --color-terracotta-soft: #e8c2ab;
+  --color-sand: #e4dcc9;
+  --color-line: #d9cfba;
+  --color-ok: #4a7a5d;
+  --color-warn: #b8863b;
+  --color-danger: #ad4433;
+
+  --font-display: "Fraunces", serif;
+  --font-body: "Manrope", sans-serif;
+
+  --radius-soft: 10px;
+  --shadow-soft: 0 12px 32px -12px rgba(43, 38, 32, 0.25);
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--color-olive-deep);
+  margin: 0;
+}
+
+button {
+  font-family: var(--font-body);
+  cursor: pointer;
+}
+
+a { color: inherit; }
