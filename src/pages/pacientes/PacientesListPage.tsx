@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Paciente } from '../../types';
 import { useToast } from '../../context/ToastContext';
+import { EmptyState } from '../../components/common/EmptyState';
 
 export const PacientesListPage: React.FC = () => {
   const { showToast, confirmAction } = useToast();
@@ -168,8 +169,18 @@ export const PacientesListPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Visualização em Tabela */}
-      {viewMode === 'table' ? (
+      {/* Verificação de Lista Vazia */}
+      {filteredPacientes.length === 0 ? (
+        <div className="card p-4">
+          <EmptyState
+            icon="bi-people"
+            title="Nenhum paciente encontrado"
+            description="Não encontramos pacientes correspondentes aos filtros de busca aplicados."
+            actionText="Limpar Filtros"
+            onAction={() => { setSearch(''); setStatusFilter('todos'); }}
+          />
+        </div>
+      ) : viewMode === 'table' ? (
         <div className="card">
           <div className="table-responsive">
             <table className="table table-hover align-middle mb-0">

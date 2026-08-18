@@ -62,9 +62,11 @@ export const PacientePortalPage: React.FC = () => {
         }}
       >
         <div>
-          <span className="badge badge-success mb-2">Área do Paciente • Espaço Seguro</span>
+          <span className="badge badge-success mb-2">
+            <i className="bi bi-shield-check me-1"></i> Área do Paciente • Espaço Seguro
+          </span>
           <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '24px', fontWeight: 700, margin: 0, color: '#fff' }}>
-            Olá, {user.name} 👋
+            Olá, {user.name}
           </h2>
           <p style={{ fontSize: '13.5px', color: 'rgba(255,255,255,0.75)', margin: '6px 0 0' }}>
             Seu acompanhamento psicológico é conduzido por <strong>Dra. Sofia Mendes (CRP 06/123456)</strong>.

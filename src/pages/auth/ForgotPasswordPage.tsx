@@ -86,11 +86,14 @@ export const ForgotPasswordPage: React.FC = () => {
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '24px',
-              marginBottom: '12px'
+              color: '#fff',
+              marginBottom: '12px',
+              boxShadow: '0 8px 20px rgba(0,0,0,0.15)'
             }}
           >
-            🧠
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2v20M4 8c0 4.418 3.582 8 8 8s8-3.582 8-8M4 8V4M20 8V4" />
+            </svg>
           </div>
           <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '22px', fontWeight: 700, margin: 0, color: '#fff' }}>
             Recuperação de Senha

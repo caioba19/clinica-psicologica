@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link, useParams } from 'react-router-dom';
 import { useToast } from '../../context/ToastContext';
+import { maskCPF, maskPhone, maskCEP } from '../../utils/masks';
 
 export const PacienteFormPage: React.FC = () => {
   const { id } = useParams<{ id?: string }>();
@@ -36,7 +37,17 @@ export const PacienteFormPage: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    let formattedValue = value;
+
+    if (name === 'cpf') {
+      formattedValue = maskCPF(value);
+    } else if (name === 'telefone' || name === 'telefoneEmergencia') {
+      formattedValue = maskPhone(value);
+    } else if (name === 'cep') {
+      formattedValue = maskCEP(value);
+    }
+
+    setFormData((prev) => ({ ...prev, [name]: formattedValue }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {

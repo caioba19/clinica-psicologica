@@ -1,10 +1,16 @@
 import React, { useState } from 'react';
 import { StatCard } from '../../components/common/StatCard';
+import { EmptyState } from '../../components/common/EmptyState';
 import { UsuarioSistema, PsicologoProfissional, LogAuditoria } from '../../types';
 import { useToast } from '../../context/ToastContext';
+import { maskCRP } from '../../utils/masks';
 
 export const AdminUsuariosPage: React.FC = () => {
   const { showToast, confirmAction } = useToast();
+
+  const [activeTab, setActiveTab] = useState<'usuarios' | 'psicologos' | 'logs'>('usuarios');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [tipoLogFilter, setTipoLogFilter] = useState<'todos' | 'acesso' | 'cadastro' | 'prontuario'>('todos');
 
   const [usuarios, setUsuarios] = useState<UsuarioSistema[]>([
     { id: 'u1', nome: 'Renata Farias', email: 'renata@clinica.com', perfil: 'administrador', situacao: 'ativo', criadoEm: '10/01/2026' },
@@ -23,7 +29,8 @@ export const AdminUsuariosPage: React.FC = () => {
   const [logs, setLogs] = useState<LogAuditoria[]>([
     { id: 'l1', autor: 'Renata Farias (Admin)', acao: 'Bloqueou o acesso de Bianca Souza por pendência cadastral', dataHora: '17/08/2026 às 10:22' },
     { id: 'l2', autor: 'Renata Farias (Admin)', acao: 'Cadastrou o psicólogo Diego Ramos no sistema', dataHora: '10/08/2026 às 16:05' },
-    { id: 'l3', autor: 'Marcelo Andrade (Psi)', acao: 'Atualizou prontuário de Carla Menezes', dataHora: '09/08/2026 às 08:41' }
+    { id: 'l3', autor: 'Marcelo Andrade (Psi)', acao: 'Atualizou prontuário de Carla Menezes', dataHora: '09/08/2026 às 08:41' },
+    { id: 'l4', autor: 'Sistema (Autenticação)', acao: 'Tentativa de login com senha incorreta: marcelo@clinica.com', dataHora: '08/08/2026 às 14:12' }
   ]);
 
   const [modalNovoOpen, setModalNovoOpen] = useState(false);
@@ -31,7 +38,7 @@ export const AdminUsuariosPage: React.FC = () => {
   const [novoEmail, setNovoEmail] = useState('');
   const [novoPerfil, setNovoPerfil] = useState<'administrador' | 'psicologo'>('psicologo');
   const [novoCrp, setNovoCrp] = useState('');
-  const [novaArea, setNovaArea] = useState('Psicologia Clínica');
+  const [novaArea, setNovaArea] = useState('Psicologia Clínica (TCC)');
 
   const totalAtivos = usuarios.filter((u) => u.situacao === 'ativo').length;
   const totalBloqueados = usuarios.filter((u) => u.situacao === 'bloqueado').length;
@@ -103,6 +110,32 @@ export const AdminUsuariosPage: React.FC = () => {
     setNovoCrp('');
   };
 
+  const filteredUsuarios = usuarios.filter(
+    (u) =>
+      u.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      u.perfil.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredPsicologos = psicologos.filter(
+    (p) =>
+      p.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.areaAtuacao.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.registroCrp.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredLogs = logs.filter((l) => {
+    const matchSearch =
+      l.acao.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      l.autor.toLowerCase().includes(searchTerm.toLowerCase());
+    if (!matchSearch) return false;
+
+    if (tipoLogFilter === 'acesso') return l.acao.toLowerCase().includes('bloqueou') || l.acao.toLowerCase().includes('liberou') || l.acao.toLowerCase().includes('login');
+    if (tipoLogFilter === 'cadastro') return l.acao.toLowerCase().includes('cadastrou');
+    if (tipoLogFilter === 'prontuario') return l.acao.toLowerCase().includes('prontuário') || l.acao.toLowerCase().includes('laudo');
+    return true;
+  });
+
   return (
     <div>
       <div className="page-header">
@@ -151,154 +184,286 @@ export const AdminUsuariosPage: React.FC = () => {
         />
       </div>
 
-      {/* Tabela de Usuários */}
-      <div className="card mb-4">
-        <div className="card-header">
-          <h3 className="card-title">Usuários & Credenciais do Sistema</h3>
+      {/* Navegação por Abas */}
+      <div className="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-3">
+        <div className="d-inline-flex p-1 bg-white border rounded-3 shadow-sm">
+          <button
+            type="button"
+            className={`btn btn-sm ${activeTab === 'usuarios' ? 'btn-primary' : 'btn-ghost border-0'}`}
+            style={{ fontWeight: 600, fontSize: '13px', borderRadius: '6px' }}
+            onClick={() => setActiveTab('usuarios')}
+          >
+            <i className="bi bi-people me-1"></i> Usuários ({usuarios.length})
+          </button>
+          <button
+            type="button"
+            className={`btn btn-sm ${activeTab === 'psicologos' ? 'btn-primary' : 'btn-ghost border-0'}`}
+            style={{ fontWeight: 600, fontSize: '13px', borderRadius: '6px' }}
+            onClick={() => setActiveTab('psicologos')}
+          >
+            <i className="bi bi-person-badge me-1"></i> Corpo Clínico ({psicologos.length})
+          </button>
+          <button
+            type="button"
+            className={`btn btn-sm ${activeTab === 'logs' ? 'btn-primary' : 'btn-ghost border-0'}`}
+            style={{ fontWeight: 600, fontSize: '13px', borderRadius: '6px' }}
+            onClick={() => setActiveTab('logs')}
+          >
+            <i className="bi bi-clock-history me-1"></i> Logs de Auditoria ({logs.length})
+          </button>
         </div>
-        <div className="table-responsive">
-          <table className="table table-hover align-middle mb-0">
-            <thead>
-              <tr>
-                <th style={{ paddingLeft: '20px' }}>Nome</th>
-                <th>E-mail</th>
-                <th>Perfil de Acesso</th>
-                <th>Situação</th>
-                <th>Criado Em</th>
-                <th className="text-end" style={{ paddingRight: '20px' }}>Ação Administrativa</th>
-              </tr>
-            </thead>
-            <tbody>
-              {usuarios.map((u) => (
-                <tr key={u.id}>
-                  <td style={{ paddingLeft: '20px' }}>
-                    <div className="d-flex align-items-center gap-2">
-                      <div
-                        style={{
-                          width: '32px',
-                          height: '32px',
-                          borderRadius: '50%',
-                          background: u.perfil === 'administrador' ? '#2c5f6e' : '#5cb8a8',
-                          color: '#fff',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '11px',
-                          fontWeight: 700
-                        }}
-                      >
-                        {u.nome.split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase()}
-                      </div>
-                      <strong>{u.nome}</strong>
-                    </div>
-                  </td>
-                  <td className="text-secondary">{u.email}</td>
-                  <td>
-                    <span className={`badge ${u.perfil === 'administrador' ? 'badge-primary' : 'badge-info'}`}>
-                      {u.perfil.toUpperCase()}
-                    </span>
-                  </td>
-                  <td>
-                    <span
-                      className={`badge ${
-                        u.situacao === 'ativo'
-                          ? 'badge-success'
-                          : u.situacao === 'bloqueado'
-                          ? 'badge-danger'
-                          : 'badge-warning'
-                      }`}
-                    >
-                      {u.situacao.toUpperCase()}
-                    </span>
-                  </td>
-                  <td className="text-muted small">{u.criadoEm}</td>
-                  <td className="text-end" style={{ paddingRight: '20px' }}>
-                    {u.perfil !== 'administrador' ? (
-                      <button
-                        type="button"
-                        className={`btn btn-sm ${u.situacao === 'ativo' ? 'btn-outline-danger' : 'btn-outline-success'}`}
-                        style={{ fontSize: '12px', fontWeight: 600, padding: '4px 10px' }}
-                        onClick={() => alternarSituacao(u.id, u.nome, u.situacao)}
-                      >
-                        {u.situacao === 'ativo' ? 'Bloquear Acesso' : 'Liberar Acesso'}
-                      </button>
-                    ) : (
-                      <span className="text-muted small">Admin Geral</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+
+        {/* Campo de Busca Rápida */}
+        <div className="d-flex align-items-center gap-2">
+          <div className="position-relative" style={{ width: '260px' }}>
+            <i className="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+            <input
+              type="text"
+              className="form-control form-control-sm ps-5"
+              placeholder="Buscar registros..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          {searchTerm && (
+            <button
+              type="button"
+              className="btn btn-sm btn-ghost"
+              onClick={() => setSearchTerm('')}
+              title="Limpar busca"
+            >
+              <i className="bi bi-x"></i>
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Tabela de Psicólogos & Especialidades */}
-      <div className="card mb-4">
-        <div className="card-header">
-          <h3 className="card-title">Corpo Clínico & Áreas de Atuação</h3>
+      {/* ABA 1: USUÁRIOS */}
+      {activeTab === 'usuarios' && (
+        <div className="card mb-4">
+          <div className="card-header d-flex justify-content-between align-items-center">
+            <h3 className="card-title">Usuários & Credenciais do Sistema</h3>
+            <span className="text-muted small">Total: {filteredUsuarios.length}</span>
+          </div>
+          {filteredUsuarios.length === 0 ? (
+            <EmptyState
+              icon="bi-people"
+              title="Nenhum usuário encontrado"
+              description="Não encontramos nenhum usuário com os termos pesquisados."
+              actionText="Limpar Busca"
+              onAction={() => setSearchTerm('')}
+            />
+          ) : (
+            <div className="table-responsive">
+              <table className="table table-hover align-middle mb-0">
+                <thead>
+                  <tr>
+                    <th style={{ paddingLeft: '20px' }}>Nome</th>
+                    <th>E-mail</th>
+                    <th>Perfil de Acesso</th>
+                    <th>Situação</th>
+                    <th>Criado Em</th>
+                    <th className="text-end" style={{ paddingRight: '20px' }}>Ação Administrativa</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredUsuarios.map((u) => (
+                    <tr key={u.id}>
+                      <td style={{ paddingLeft: '20px' }}>
+                        <div className="d-flex align-items-center gap-2">
+                          <div
+                            style={{
+                              width: '32px',
+                              height: '32px',
+                              borderRadius: '50%',
+                              background: u.perfil === 'administrador' ? '#2c5f6e' : '#5cb8a8',
+                              color: '#fff',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '11px',
+                              fontWeight: 700
+                            }}
+                          >
+                            {u.nome.split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase()}
+                          </div>
+                          <strong>{u.nome}</strong>
+                        </div>
+                      </td>
+                      <td className="text-secondary">{u.email}</td>
+                      <td>
+                        <span className={`badge ${u.perfil === 'administrador' ? 'badge-primary' : 'badge-info'}`}>
+                          {u.perfil.toUpperCase()}
+                        </span>
+                      </td>
+                      <td>
+                        <span
+                          className={`badge ${
+                            u.situacao === 'ativo'
+                              ? 'badge-success'
+                              : u.situacao === 'bloqueado'
+                              ? 'badge-danger'
+                              : 'badge-warning'
+                          }`}
+                        >
+                          {u.situacao.toUpperCase()}
+                        </span>
+                      </td>
+                      <td className="text-muted small">{u.criadoEm}</td>
+                      <td className="text-end" style={{ paddingRight: '20px' }}>
+                        {u.perfil !== 'administrador' ? (
+                          <button
+                            type="button"
+                            className={`btn btn-sm ${u.situacao === 'ativo' ? 'btn-outline-danger' : 'btn-outline-success'}`}
+                            style={{ fontSize: '12px', fontWeight: 600, padding: '4px 10px' }}
+                            onClick={() => alternarSituacao(u.id, u.nome, u.situacao)}
+                          >
+                            {u.situacao === 'ativo' ? 'Bloquear Acesso' : 'Liberar Acesso'}
+                          </button>
+                        ) : (
+                          <span className="text-muted small">Admin Geral</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
-        <div className="table-responsive">
-          <table className="table table-hover align-middle mb-0">
-            <thead>
-              <tr>
-                <th style={{ paddingLeft: '20px' }}>Profissional</th>
-                <th>Registro Profissional</th>
-                <th>Área de Atuação</th>
-                <th>Situação</th>
-              </tr>
-            </thead>
-            <tbody>
-              {psicologos.map((p) => (
-                <tr key={p.id}>
-                  <td style={{ paddingLeft: '20px' }}>
-                    <strong>{p.nome}</strong>
-                    <span className="d-block text-muted small">{p.email}</span>
-                  </td>
-                  <td><span className="badge badge-info">{p.registroCrp}</span></td>
-                  <td>{p.areaAtuacao}</td>
-                  <td>
-                    <span className={`badge ${p.situacao === 'ativo' ? 'badge-success' : 'badge-warning'}`}>
-                      {p.situacao.toUpperCase()}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      )}
 
-      {/* Logs de Auditoria do Sistema (Exigência AV3) */}
-      <div className="card">
-        <div className="card-header">
-          <h3 className="card-title"><i className="bi bi-clock-history me-2 text-primary"></i>Registro de Ações e Auditoria (Logs)</h3>
+      {/* ABA 2: PSICÓLOGOS */}
+      {activeTab === 'psicologos' && (
+        <div className="card mb-4">
+          <div className="card-header d-flex justify-content-between align-items-center">
+            <h3 className="card-title">Corpo Clínico & Áreas de Atuação</h3>
+            <span className="text-muted small">Total: {filteredPsicologos.length}</span>
+          </div>
+          {filteredPsicologos.length === 0 ? (
+            <EmptyState
+              icon="bi-person-badge"
+              title="Nenhum psicólogo encontrado"
+              description="Nenhum profissional corresponde ao termo buscado."
+              actionText="Limpar Busca"
+              onAction={() => setSearchTerm('')}
+            />
+          ) : (
+            <div className="table-responsive">
+              <table className="table table-hover align-middle mb-0">
+                <thead>
+                  <tr>
+                    <th style={{ paddingLeft: '20px' }}>Profissional</th>
+                    <th>Registro Profissional</th>
+                    <th>Área de Atuação</th>
+                    <th>Situação</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredPsicologos.map((p) => (
+                    <tr key={p.id}>
+                      <td style={{ paddingLeft: '20px' }}>
+                        <strong>{p.nome}</strong>
+                        <span className="d-block text-muted small">{p.email}</span>
+                      </td>
+                      <td><span className="badge badge-info">{p.registroCrp}</span></td>
+                      <td>{p.areaAtuacao}</td>
+                      <td>
+                        <span className={`badge ${p.situacao === 'ativo' ? 'badge-success' : 'badge-warning'}`}>
+                          {p.situacao.toUpperCase()}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
-        <div className="table-responsive">
-          <table className="table table-hover align-middle mb-0">
-            <thead>
-              <tr>
-                <th style={{ paddingLeft: '20px' }}>Autor da Ação</th>
-                <th>Operação Realizada</th>
-                <th className="text-end" style={{ paddingRight: '20px' }}>Data e Hora</th>
-              </tr>
-            </thead>
-            <tbody>
-              {logs.map((l) => (
-                <tr key={l.id}>
-                  <td style={{ paddingLeft: '20px' }}>
-                    <strong className="text-dark">{l.autor}</strong>
-                  </td>
-                  <td>{l.acao}</td>
-                  <td className="text-end text-muted small" style={{ paddingRight: '20px' }}>
-                    {l.dataHora}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      )}
+
+      {/* ABA 3: LOGS DE AUDITORIA */}
+      {activeTab === 'logs' && (
+        <div className="card">
+          <div className="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <h3 className="card-title mb-0">
+              <i className="bi bi-shield-check text-success me-2"></i>Logs de Auditoria do Sistema (`/api/audit-logs`)
+            </h3>
+            
+            {/* Filtros de Categoria de Log */}
+            <div className="btn-group" role="group">
+              <button
+                type="button"
+                className={`btn btn-sm ${tipoLogFilter === 'todos' ? 'btn-primary' : 'btn-outline-secondary'}`}
+                style={{ fontSize: '11.5px', padding: '3px 8px' }}
+                onClick={() => setTipoLogFilter('todos')}
+              >
+                Todos
+              </button>
+              <button
+                type="button"
+                className={`btn btn-sm ${tipoLogFilter === 'acesso' ? 'btn-primary' : 'btn-outline-secondary'}`}
+                style={{ fontSize: '11.5px', padding: '3px 8px' }}
+                onClick={() => setTipoLogFilter('acesso')}
+              >
+                Acessos & Bloqueios
+              </button>
+              <button
+                type="button"
+                className={`btn btn-sm ${tipoLogFilter === 'cadastro' ? 'btn-primary' : 'btn-outline-secondary'}`}
+                style={{ fontSize: '11.5px', padding: '3px 8px' }}
+                onClick={() => setTipoLogFilter('cadastro')}
+              >
+                Cadastros
+              </button>
+              <button
+                type="button"
+                className={`btn btn-sm ${tipoLogFilter === 'prontuario' ? 'btn-primary' : 'btn-outline-secondary'}`}
+                style={{ fontSize: '11.5px', padding: '3px 8px' }}
+                onClick={() => setTipoLogFilter('prontuario')}
+              >
+                Prontuários
+              </button>
+            </div>
+          </div>
+
+          {filteredLogs.length === 0 ? (
+            <EmptyState
+              icon="bi-journal-check"
+              title="Nenhum log correspondente"
+              description="Não foram encontradas ações registradas com os filtros atuais."
+              actionText="Resetar Filtros"
+              onAction={() => { setTipoLogFilter('todos'); setSearchTerm(''); }}
+            />
+          ) : (
+            <div className="table-responsive">
+              <table className="table table-hover align-middle mb-0">
+                <thead>
+                  <tr>
+                    <th style={{ paddingLeft: '20px' }}>Autor da Ação</th>
+                    <th>Operação Auditada</th>
+                    <th className="text-end" style={{ paddingRight: '20px' }}>Data e Hora</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredLogs.map((l) => (
+                    <tr key={l.id}>
+                      <td style={{ paddingLeft: '20px' }}>
+                        <span className="badge badge-primary me-2" style={{ fontSize: '10px' }}>LOG</span>
+                        <strong>{l.autor}</strong>
+                      </td>
+                      <td style={{ fontSize: '13px' }}>{l.acao}</td>
+                      <td className="text-end text-muted small" style={{ paddingRight: '20px' }}>
+                        {l.dataHora}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
-      </div>
+      )}
 
       {/* Modal Novo Usuário */}
       {modalNovoOpen && (
@@ -357,7 +522,8 @@ export const AdminUsuariosPage: React.FC = () => {
                         className="form-control"
                         placeholder="CRP 06/123456"
                         value={novoCrp}
-                        onChange={(e) => setNovoCrp(e.target.value)}
+                        onChange={(e) => setNovoCrp(maskCRP(e.target.value))}
+                        maxLength={13}
                       />
                     </div>
                     <div className="col-md-6">

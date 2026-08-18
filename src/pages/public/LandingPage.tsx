@@ -41,17 +41,20 @@ export const LandingPage: React.FC = () => {
           >
             <div
               style={{
-                width: '36px',
-                height: '36px',
+                width: '38px',
+                height: '38px',
                 borderRadius: '10px',
                 background: 'linear-gradient(135deg, #5cb8a8, #3d7a8a)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '20px'
+                color: '#fff',
+                boxShadow: '0 4px 12px rgba(92, 184, 168, 0.3)'
               }}
             >
-              🧠
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2v20M4 8c0 4.418 3.582 8 8 8s8-3.582 8-8M4 8V4M20 8V4" />
+              </svg>
             </div>
             <span style={{ fontSize: '21px', fontWeight: 800, letterSpacing: '-0.02em' }}>
               Psico<span style={{ color: '#5cb8a8' }}>Manager</span>
@@ -227,73 +230,101 @@ export const LandingPage: React.FC = () => {
         </div>
 
         {/* Visual Hero / Foto com Orgânica Shape */}
-        <div style={{ flex: 1, display: 'flex', justifyContent: 'center', position: 'relative' }}>
+        <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'relative', minHeight: '440px' }}>
           <div
             style={{
               position: 'relative',
               width: '100%',
-              maxWidth: '440px',
-              height: '400px',
+              maxWidth: '420px',
+              height: '420px',
               borderRadius: '60% 40% 30% 70% / 60% 30% 70% 40%',
-              background: 'linear-gradient(135deg, #2c5f6e, #3d7a8a)',
+              background: 'linear-gradient(135deg, #2c5f6e 0%, #173f4b 100%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 24px 60px rgba(0,0,0,0.3)',
-              overflow: 'hidden'
+              boxShadow: '0 24px 60px rgba(0,0,0,0.35)',
+              border: '1px solid rgba(255, 255, 255, 0.08)'
             }}
           >
-            {/* Foto Ilustrativa de Acolhimento */}
-            <div style={{ textAlign: 'center', padding: '30px' }}>
-              <div style={{ fontSize: '80px', marginBottom: '10px' }}>🧑‍⚕️</div>
-              <h3 style={{ fontSize: '20px', fontWeight: 700, color: '#fff', margin: 0 }}>Atendimento Humanizado</h3>
-              <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)', marginTop: '4px' }}>Profissionais certificados pelo CFP</p>
+            {/* Ilustração e Destaque de Acolhimento Clínico */}
+            <div style={{ textAlign: 'center', padding: '24px 32px', maxWidth: '340px' }}>
+              <div
+                style={{
+                  width: '84px',
+                  height: '84px',
+                  borderRadius: '50%',
+                  background: 'rgba(92, 184, 168, 0.15)',
+                  border: '2px solid rgba(92, 184, 168, 0.35)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: '14px',
+                  color: '#5cb8a8',
+                  boxShadow: '0 8px 24px rgba(92, 184, 168, 0.2)'
+                }}
+              >
+                <i className="bi bi-heart-pulse-fill" style={{ fontSize: '38px' }}></i>
+              </div>
+              <h3 style={{ fontSize: '19px', fontWeight: 700, color: '#fff', margin: 0 }}>Atendimento Humanizado</h3>
+              <p style={{ fontSize: '12.5px', color: 'rgba(255,255,255,0.7)', marginTop: '6px', lineHeight: 1.4 }}>
+                Profissionais credenciados com registro ativo no CFP
+              </p>
             </div>
           </div>
 
-          {/* Card Flutuante "Experimente o PsicoMatch" */}
+          {/* Card Flutuante "Experimente o PsicoMatch" (Posicionado offset na lateral inferior sem cobrir o texto) */}
           {matchOpen && (
             <div
               style={{
                 position: 'absolute',
-                bottom: '10px',
-                right: '0',
-                backgroundColor: '#12262d',
-                borderRadius: '12px',
-                padding: '18px 22px',
-                maxWidth: '280px',
-                boxShadow: '0 16px 36px rgba(0, 0, 0, 0.4)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                zIndex: 2
+                bottom: '-12px',
+                right: 'max(-20px, calc(50% - 240px))',
+                backgroundColor: '#0f2026',
+                borderRadius: '14px',
+                padding: '16px 20px',
+                maxWidth: '270px',
+                boxShadow: '0 20px 45px rgba(0, 0, 0, 0.5)',
+                border: '1px solid rgba(92, 184, 168, 0.25)',
+                backdropFilter: 'blur(10px)',
+                zIndex: 10
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
-                <strong style={{ fontSize: '13.5px', color: '#FFFFFF' }}>Experimente o PsicoMatch!</strong>
+                <div className="d-flex align-items-center gap-2">
+                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#5cb8a8' }}></span>
+                  <strong style={{ fontSize: '13px', color: '#FFFFFF' }}>PsicoMatch Inteligente</strong>
+                </div>
                 <button
                   type="button"
                   onClick={() => setMatchOpen(false)}
                   style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', padding: 0 }}
+                  title="Fechar"
                 >
-                  <i className="bi bi-x"></i>
+                  <i className="bi bi-x fs-6"></i>
                 </button>
               </div>
-              <p style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.65)', lineHeight: 1.5, marginBottom: '12px' }}>
+              <p style={{ fontSize: '11.5px', color: 'rgba(255, 255, 255, 0.7)', lineHeight: 1.5, margin: '6px 0 10px' }}>
                 Encontre o psicólogo ideal para sua necessidade em menos de 2 minutos.
               </p>
               <button
                 type="button"
                 onClick={() => navigate('/login')}
                 style={{
-                  background: 'none',
-                  border: 'none',
+                  background: 'rgba(92, 184, 168, 0.15)',
+                  border: '1px solid rgba(92, 184, 168, 0.3)',
                   color: '#5cb8a8',
-                  fontSize: '13px',
+                  fontSize: '12px',
                   fontWeight: 700,
                   cursor: 'pointer',
-                  padding: 0
+                  padding: '5px 12px',
+                  borderRadius: '6px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px'
                 }}
               >
-                Iniciar <i className="bi bi-arrow-right"></i>
+                <span>Iniciar Match</span>
+                <i className="bi bi-arrow-right"></i>
               </button>
             </div>
           )}

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useToast } from '../../context/ToastContext';
+import { useAuth } from '../../context/AuthContext';
+import { PrintModal } from '../../components/common/PrintModal';
 
 interface SessaoItem {
   id: string;
@@ -13,11 +15,21 @@ interface SessaoItem {
 
 export const SessoesPage: React.FC = () => {
   const { showToast } = useToast();
+  const { user } = useAuth();
   const [selectedPacId, setSelectedPacId] = useState('1');
   const [activeTab, setActiveTab] = useState<'evolucoes' | 'anamnese' | 'documentos'>('evolucoes');
   const [openSessaoId, setOpenSessaoId] = useState<string | null>('s1');
   const [novaNota, setNovaNota] = useState('');
   const [planoAcao, setPlanoAcao] = useState('');
+
+  const [printDoc, setPrintDoc] = useState<{
+    isOpen: boolean;
+    tipo: 'recibo' | 'declaracao' | 'laudo' | 'evolucao';
+    detalhes?: string;
+  }>({
+    isOpen: false,
+    tipo: 'evolucao'
+  });
 
   const pacientesLista = [
     { id: '1', nome: 'Lucas Ferreira Mendes', idade: '34 anos', modalidade: 'TCC', sessoes: 12, crp: '06/123456', avatar: 'LF', color: '#2c5f6e' },
@@ -293,10 +305,24 @@ export const SessoesPage: React.FC = () => {
                               {s.resumo}
                             </p>
                             {s.plano && (
-                              <div className="p-2 bg-light rounded border small">
+                              <div className="p-2 bg-light rounded border small mb-3">
                                 <strong>Plano / Tarefa:</strong> {s.plano}
                               </div>
                             )}
+                            <div className="d-flex justify-content-end">
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-ghost"
+                                style={{ fontSize: '12px' }}
+                                onClick={() => setPrintDoc({
+                                  isOpen: true,
+                                  tipo: 'evolucao',
+                                  detalhes: `Sessão #${s.num} (${s.data})\n\nRelato da Sessão:\n${s.resumo}\n\nPlano Terapêutico:\n${s.plano}`
+                                })}
+                              >
+                                <i className="bi bi-printer me-1"></i> Imprimir Registro
+                              </button>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -310,8 +336,20 @@ export const SessoesPage: React.FC = () => {
           {/* Aba Anamnese */}
           {activeTab === 'anamnese' && (
             <div className="card">
-              <div className="card-header">
+              <div className="card-header d-flex justify-content-between align-items-center">
                 <h3 className="card-title">Anamnese Completa</h3>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-ghost"
+                  style={{ fontSize: '12px' }}
+                  onClick={() => setPrintDoc({
+                    isOpen: true,
+                    tipo: 'laudo',
+                    detalhes: `Paciente: ${currentPac.nome} (${currentPac.idade})\nAbordagem: ${currentPac.modalidade}\n\nQueixa Principal:\nPaciente buscou atendimento devido a crises de ansiedade associadas à sobrecarga de trabalho.\n\nHistórico Familiar & Social:\nHistórico familiar positivo para depressão. Relata isolamento social nos últimos 6 meses.`
+                  })}
+                >
+                  <i className="bi bi-printer me-1"></i> Imprimir Laudo Inicial
+                </button>
               </div>
               <div className="card-body">
                 <div className="row g-3 mb-3">
@@ -344,8 +382,15 @@ export const SessoesPage: React.FC = () => {
             <div className="card">
               <div className="card-header d-flex justify-content-between align-items-center">
                 <h3 className="card-title">Documentos & Declarações</h3>
-                <button className="btn-accent btn-sm" onClick={() => showToast('Novo laudo gerado', 'success')}>
-                  <i className="bi bi-file-earmark-plus me-1"></i> Gerar Declaração / Atestado
+                <button
+                  className="btn-accent btn-sm"
+                  onClick={() => setPrintDoc({
+                    isOpen: true,
+                    tipo: 'declaracao',
+                    detalhes: 'Declaração de comparecimento emitida para fins de comprovação.'
+                  })}
+                >
+                  <i className="bi bi-file-earmark-plus me-1"></i> Gerar Declaração
                 </button>
               </div>
               <div className="card-body">
@@ -357,8 +402,15 @@ export const SessoesPage: React.FC = () => {
                       <span className="text-muted small">Gerado em 10/08/2026 • PDF assinado</span>
                     </div>
                   </div>
-                  <button className="btn btn-sm btn-outline-secondary" onClick={() => showToast('Download iniciado', 'info')}>
-                    <i className="bi bi-download"></i>
+                  <button
+                    className="btn btn-sm btn-outline-primary"
+                    onClick={() => setPrintDoc({
+                      isOpen: true,
+                      tipo: 'declaracao',
+                      detalhes: 'Comparecimento à sessão de psicoterapia individual.'
+                    })}
+                  >
+                    <i className="bi bi-printer me-1"></i> Imprimir / PDF
                   </button>
                 </div>
 
@@ -370,8 +422,11 @@ export const SessoesPage: React.FC = () => {
                       <span className="text-muted small">Assinado digitalmente em 15/05/2026</span>
                     </div>
                   </div>
-                  <button className="btn btn-sm btn-outline-secondary" onClick={() => showToast('Download iniciado', 'info')}>
-                    <i className="bi bi-download"></i>
+                  <button
+                    className="btn btn-sm btn-outline-secondary"
+                    onClick={() => showToast('Contrato digital verificado e válido.', 'success')}
+                  >
+                    <i className="bi bi-check-circle me-1"></i> Válido
                   </button>
                 </div>
               </div>
@@ -379,6 +434,20 @@ export const SessoesPage: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Modal de Impressão */}
+      <PrintModal
+        isOpen={printDoc.isOpen}
+        onClose={() => setPrintDoc((prev) => ({ ...prev, isOpen: false }))}
+        tipo={printDoc.tipo}
+        dados={{
+          pacienteNome: currentPac.nome,
+          psicologoNome: user.name || 'Dra. Sofia Mendes',
+          psicologoCrp: user.crp || 'CRP 06/123456',
+          data: '17 de Agosto de 2026',
+          detalhes: printDoc.detalhes
+        }}
+      />
     </div>
   );
 };

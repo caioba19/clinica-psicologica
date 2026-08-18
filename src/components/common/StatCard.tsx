@@ -20,7 +20,7 @@ export const StatCard: React.FC<StatCardProps> = ({
   return (
     <div className="stat-card">
       <div className={`stat-icon ${color}`}>
-        <i className={`bi ${icon}`}></i>
+        <i className={`bi ${icon.startsWith('bi-') ? icon : `bi-${icon}`}`}></i>
       </div>
       <div className="stat-info">
         <p className="stat-value">{value}</p>

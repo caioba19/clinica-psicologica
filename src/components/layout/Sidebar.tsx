@@ -25,7 +25,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       />
       <aside className={`sidebar ${isOpen ? 'sidebar-open' : ''}`}>
         <div className="sidebar-logo">
-          <div className="sidebar-logo-icon">🧠</div>
+          <div className="sidebar-logo-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2v20M4 8c0 4.418 3.582 8 8 8s8-3.582 8-8M4 8V4M20 8V4" />
+            </svg>
+          </div>
           <div className="sidebar-logo-text">
             <span className="sidebar-logo-title">PsicoManager</span>
             <span className="sidebar-logo-subtitle">
@@ -38,38 +42,67 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           </div>
         </div>
 
-        {/* Seletor Rápido de Perfil (Para visualização e testes em tempo real) */}
+        {/* Seletor Rápido de Perfil (Para testes e demonstração da AV3) */}
         <div style={{ padding: '12px 14px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-          <label style={{ display: 'block', fontSize: '10px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>
-            Visualizando como:
-          </label>
-          <div className="btn-group w-100" role="group">
+          <div className="d-flex align-items-center justify-content-between mb-2">
+            <span style={{ fontSize: '10.5px', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>
+              Modo de Acesso:
+            </span>
+            <span className="badge" style={{ fontSize: '9.5px', background: 'rgba(92,184,168,0.18)', color: '#5cb8a8', border: '1px solid rgba(92,184,168,0.3)' }}>
+              Simulação
+            </span>
+          </div>
+          <div className="btn-group w-100" role="group" style={{ background: 'rgba(0,0,0,0.2)', padding: '2px', borderRadius: '8px' }}>
             <button
               type="button"
-              className={`btn btn-sm ${user.perfil === 'psicologo' ? 'btn-primary' : 'btn-dark'}`}
-              style={{ fontSize: '11px', padding: '4px 6px' }}
+              className={`btn btn-sm ${user.perfil === 'psicologo' ? 'btn-primary shadow-sm' : 'btn-dark'}`}
+              style={{
+                fontSize: '11px',
+                padding: '4px 6px',
+                borderRadius: '6px',
+                border: 'none',
+                background: user.perfil === 'psicologo' ? 'var(--accent)' : 'transparent',
+                color: user.perfil === 'psicologo' ? '#12343c' : 'rgba(255,255,255,0.7)',
+                fontWeight: user.perfil === 'psicologo' ? 700 : 500
+              }}
               onClick={() => handlePerfilChange('psicologo')}
               title="Visão do Psicólogo"
             >
-              Psicólogo
+              <i className="bi bi-person-badge me-1"></i> Psi
             </button>
             <button
               type="button"
-              className={`btn btn-sm ${user.perfil === 'administrador' ? 'btn-primary' : 'btn-dark'}`}
-              style={{ fontSize: '11px', padding: '4px 6px' }}
+              className={`btn btn-sm ${user.perfil === 'administrador' ? 'btn-primary shadow-sm' : 'btn-dark'}`}
+              style={{
+                fontSize: '11px',
+                padding: '4px 6px',
+                borderRadius: '6px',
+                border: 'none',
+                background: user.perfil === 'administrador' ? 'var(--accent)' : 'transparent',
+                color: user.perfil === 'administrador' ? '#12343c' : 'rgba(255,255,255,0.7)',
+                fontWeight: user.perfil === 'administrador' ? 700 : 500
+              }}
               onClick={() => handlePerfilChange('administrador')}
               title="Visão do Administrador"
             >
-              Admin
+              <i className="bi bi-shield-check me-1"></i> Admin
             </button>
             <button
               type="button"
-              className={`btn btn-sm ${user.perfil === 'paciente' ? 'btn-primary' : 'btn-dark'}`}
-              style={{ fontSize: '11px', padding: '4px 6px' }}
+              className={`btn btn-sm ${user.perfil === 'paciente' ? 'btn-primary shadow-sm' : 'btn-dark'}`}
+              style={{
+                fontSize: '11px',
+                padding: '4px 6px',
+                borderRadius: '6px',
+                border: 'none',
+                background: user.perfil === 'paciente' ? 'var(--accent)' : 'transparent',
+                color: user.perfil === 'paciente' ? '#12343c' : 'rgba(255,255,255,0.7)',
+                fontWeight: user.perfil === 'paciente' ? 700 : 500
+              }}
               onClick={() => handlePerfilChange('paciente')}
               title="Visão do Paciente"
             >
-              Paciente
+              <i className="bi bi-person me-1"></i> Paciente
             </button>
           </div>
         </div>

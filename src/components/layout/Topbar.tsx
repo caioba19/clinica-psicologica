@@ -2,6 +2,7 @@ import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
+import { useAccessibility } from '../../context/AccessibilityContext';
 
 interface TopbarProps {
   onToggleSidebar: () => void;
@@ -18,6 +19,7 @@ export const Topbar: React.FC<TopbarProps> = ({
 }) => {
   const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { setOpenA11yModal } = useAccessibility();
   const navigate = useNavigate();
 
   return (
@@ -25,7 +27,7 @@ export const Topbar: React.FC<TopbarProps> = ({
       <button
         className="topbar-toggle"
         type="button"
-        aria-label="Abrir menu"
+        aria-label="Abrir menu lateral"
         onClick={onToggleSidebar}
       >
         <i className="bi bi-list fs-5"></i>
@@ -47,9 +49,20 @@ export const Topbar: React.FC<TopbarProps> = ({
           <input
             type="text"
             placeholder="Buscar paciente, prontuário..."
-            aria-label="Buscar"
+            aria-label="Buscar paciente ou prontuário"
           />
         </div>
+
+        {/* Botão de Recursos de Acessibilidade (WCAG) */}
+        <button
+          className="topbar-btn"
+          type="button"
+          aria-label="Recursos de Acessibilidade (Fonte, Contraste)"
+          title="Acessibilidade (Tamanho da Fonte, Alto Contraste)"
+          onClick={() => setOpenA11yModal(true)}
+        >
+          <i className="bi bi-universal-access fs-5 text-primary"></i>
+        </button>
 
         {/* Botão de Alternância de Tema Claro / Escuro */}
         <button

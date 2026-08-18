@@ -79,11 +79,13 @@ export const LoginPage: React.FC = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '18px',
+                color: '#fff',
                 boxShadow: '0 4px 12px rgba(44, 95, 110, 0.2)'
               }}
             >
-              🧠
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2v20M4 8c0 4.418 3.582 8 8 8s8-3.582 8-8M4 8V4M20 8V4" />
+              </svg>
             </div>
             <span style={{ fontSize: '19px', fontWeight: 800, color: '#173f4b' }}>
               Psico<span style={{ color: '#5cb8a8' }}>Manager</span>
@@ -170,10 +172,13 @@ export const LoginPage: React.FC = () => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '20px'
+                  color: '#fff',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
                 }}
               >
-                🧠
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2v20M4 8c0 4.418 3.582 8 8 8s8-3.582 8-8M4 8V4M20 8V4" />
+                </svg>
               </div>
               <div>
                 <h2 style={{ fontSize: '20px', fontWeight: 800, margin: 0, color: '#fff' }}>PsicoManager</h2>

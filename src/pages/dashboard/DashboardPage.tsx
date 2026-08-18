@@ -46,11 +46,16 @@ export const DashboardPage: React.FC = () => {
         color: '#fff'
       }}>
         <div className="welcome-text">
+          <div className="d-flex align-items-center gap-2 mb-2">
+            <span className="badge" style={{ background: 'rgba(92, 184, 168, 0.2)', color: '#b8e3dc', fontSize: '11px', fontWeight: 600, border: '1px solid rgba(92,184,168,0.3)' }}>
+              <i className="bi bi-activity me-1"></i> Painel de Atendimento
+            </span>
+          </div>
           <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '24px', fontWeight: 600, color: '#fff', marginBottom: '6px' }}>
-            Olá, {user.name} 👋
+            Olá, {user.name}
           </h2>
-          <p style={{ fontSize: '13.5px', color: 'rgba(255,255,255,0.7)', margin: 0 }}>
-            Você possui <strong>5 atendimentos</strong> agendados para hoje. Tenha um excelente dia de trabalho!
+          <p style={{ fontSize: '13.5px', color: 'rgba(255,255,255,0.75)', margin: 0 }}>
+            Você possui <strong>5 atendimentos</strong> agendados para hoje. Tenha uma excelente jornada clínica!
           </p>
         </div>
         <div className="welcome-date text-end d-none d-md-block">

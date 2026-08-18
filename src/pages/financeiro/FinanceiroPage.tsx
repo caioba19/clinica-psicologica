@@ -1,12 +1,29 @@
 import React, { useState } from 'react';
 import { StatCard } from '../../components/common/StatCard';
+import { EmptyState } from '../../components/common/EmptyState';
+import { PrintModal } from '../../components/common/PrintModal';
 import { LancamentoFinanceiro } from '../../types';
 import { useToast } from '../../context/ToastContext';
+import { useAuth } from '../../context/AuthContext';
 
 export const FinanceiroPage: React.FC = () => {
   const { showToast, confirmAction } = useToast();
+  const { user } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
   const [filtroTipo, setFiltroTipo] = useState<'todos' | 'receita' | 'despesa'>('todos');
+
+  // Estado para impressão de recibo
+  const [printRecibo, setPrintRecibo] = useState<{
+    isOpen: boolean;
+    pacienteNome: string;
+    data: string;
+    valor: string;
+  }>({
+    isOpen: false,
+    pacienteNome: '',
+    data: '',
+    valor: ''
+  });
 
   const [lancamentos, setLancamentos] = useState<LancamentoFinanceiro[]>([
     { id: '1', descricao: 'Sessão Psicoterapia - Lucas Ferreira', pacienteNome: 'Lucas Ferreira', categoria: 'Consultas', data: '17/08/2026', valor: 220.00, tipo: 'receita', status: 'Pago', metodo: 'PIX' },
@@ -195,14 +212,31 @@ export const FinanceiroPage: React.FC = () => {
                     </strong>
                   </td>
                   <td className="text-end" style={{ paddingRight: '20px' }}>
-                    <button
-                      type="button"
-                      className="action-btn text-danger"
-                      title="Excluir lançamento"
-                      onClick={() => handleDelete(l.id, l.descricao)}
-                    >
-                      <i className="bi bi-trash"></i>
-                    </button>
+                    <div className="d-inline-flex gap-1">
+                      {l.tipo === 'receita' && (
+                        <button
+                          type="button"
+                          className="action-btn text-primary"
+                          title="Emitir Recibo em PDF"
+                          onClick={() => setPrintRecibo({
+                            isOpen: true,
+                            pacienteNome: l.pacienteNome || 'Paciente da Clínica',
+                            data: l.data === 'Hoje' ? '17 de Agosto de 2026' : l.data,
+                            valor: `R$ ${l.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                          })}
+                        >
+                          <i className="bi bi-file-earmark-pdf"></i>
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="action-btn text-danger"
+                        title="Excluir lançamento"
+                        onClick={() => handleDelete(l.id, l.descricao)}
+                      >
+                        <i className="bi bi-trash"></i>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -303,6 +337,20 @@ export const FinanceiroPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Modal de Impressão / PDF de Recibo */}
+      <PrintModal
+        isOpen={printRecibo.isOpen}
+        onClose={() => setPrintRecibo((prev) => ({ ...prev, isOpen: false }))}
+        tipo="recibo"
+        dados={{
+          pacienteNome: printRecibo.pacienteNome,
+          psicologoNome: user.name || 'Dra. Sofia Mendes',
+          psicologoCrp: user.crp || 'CRP 06/123456',
+          data: printRecibo.data,
+          valor: printRecibo.valor
+        }}
+      />
     </div>
   );
 };
