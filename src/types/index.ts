@@ -1,5 +1,5 @@
 export type PerfilUsuario = 'administrador' | 'psicologo' | 'paciente';
-export type SituacaoConta = 'ativo' | 'inativo' | 'bloqueado';
+export type SituacaoConta = 'Ativo' | 'Inativo' | 'Bloqueado';
 
 export interface UsuarioSistema {
   id: string;
@@ -17,7 +17,7 @@ export interface PsicologoProfissional {
   email: string;
   areaAtuacao: string;
   registroCrp: string;
-  situacao: SituacaoConta;
+  situacao: 'Ativo' | 'Bloqueado' | 'Inativo';
 }
 
 export interface LogAuditoria {
@@ -33,14 +33,14 @@ export interface Paciente {
   email: string;
   telefone: string;
   cpf: string;
-  dataNasc: string;
-  genero: string;
-  status: 'Ativo' | 'Inativo' | 'Em Espera';
-  convenio: string;
+  dataNasc?: string;
+  genero?: string;
+  status: 'Ativo' | 'Em Espera' | 'Inativo';
+  convenio?: string;
   psicologoId?: string;
   psicologoNome?: string;
-  totalSessoes: number;
-  ultimaSessao: string;
+  totalSessoes?: number;
+  ultimaSessao?: string;
   proximaSessao?: string;
   avatarColor?: string;
   motivoConsulta?: string;
@@ -50,15 +50,13 @@ export interface Paciente {
 export interface Sessao {
   id: string;
   pacienteId: string;
-  pacienteNome: string;
+  psicologoId: string;
   data: string;
-  hora: string;
-  duracao: string;
-  tipo: 'Individual' | 'Casal' | 'Infantil' | 'Online';
-  status: 'Realizada' | 'Agendada' | 'Cancelada' | 'Faltou';
-  valor: number;
-  pago: boolean;
-  resumoEvolucao?: string;
+  queixaPrincipal?: string;
+  evolucaoText: string;
+  humorScale: number;      
+  adesaoScale: number;     
+  status?: string;
 }
 
 export interface LancamentoFinanceiro {

@@ -4,9 +4,8 @@ import { EmptyState } from '../../components/common/EmptyState';
 import { UsuarioSistema, PsicologoProfissional, LogAuditoria } from '../../types';
 import { useToast } from '../../context/ToastContext';
 import { maskCRP } from '../../utils/masks';
-import { userService } from '../../services/userService';
+import { adminUserService as userService } from '../../services/userService';
 import { patientService } from '../../services/patientService';
-
 export const AdminUsuariosPage: React.FC = () => {
   const { showToast, confirmAction } = useToast();
 
@@ -19,9 +18,9 @@ export const AdminUsuariosPage: React.FC = () => {
   const [totalPacientesCount, setTotalPacientesCount] = useState(0);
 
   const [psicologos, setPsicologos] = useState<PsicologoProfissional[]>([
-    { id: 'p1', usuarioId: 'u2', nome: 'Dra. Sofia Mendes', email: 'dra.sofia@psicomanager.com.br', areaAtuacao: 'Psicologia Clínica (TCC)', registroCrp: 'CRP 06/123456', situacao: 'ativo' },
-    { id: 'p2', usuarioId: 'u3', nome: 'Dr. Roberto Alves', email: 'roberto.alves@clinica.com', areaAtuacao: 'Organizacional e do Trabalho', registroCrp: 'CRP 06/543210', situacao: 'ativo' },
-    { id: 'p3', usuarioId: 'u5', nome: 'Dr. Marcos Vinicius', email: 'marcos.v@clinica.com', areaAtuacao: 'Escolar e Educacional', registroCrp: 'CRP 06/987654', situacao: 'bloqueado' }
+    { id: 'p1', usuarioId: 'u2', nome: 'Dra. Sofia Mendes', email: 'dra.sofia@psicomanager.com.br', areaAtuacao: 'Psicologia Clínica (TCC)', registroCrp: 'CRP 06/123456', situacao: 'Ativo' },
+    { id: 'p2', usuarioId: 'u3', nome: 'Dr. Roberto Alves', email: 'roberto.alves@clinica.com', areaAtuacao: 'Organizacional e do Trabalho', registroCrp: 'CRP 06/543210', situacao: 'Ativo' },
+    { id: 'p3', usuarioId: 'u5', nome: 'Dr. Marcos Vinicius', email: 'marcos.v@clinica.com', areaAtuacao: 'Escolar e Educacional', registroCrp: 'CRP 06/987654', situacao: 'Bloqueado' }
   ]);
 
   const [logs, setLogs] = useState<LogAuditoria[]>([
@@ -58,22 +57,22 @@ export const AdminUsuariosPage: React.FC = () => {
     loadData();
   }, []);
 
-  const totalAtivos = usuarios.filter((u) => u.situacao === 'ativo').length;
-  const totalBloqueados = usuarios.filter((u) => u.situacao === 'bloqueado').length;
+  const totalAtivos = usuarios.filter((u) => u.situacao === 'Ativo').length;
+  const totalBloqueados = usuarios.filter((u) => u.situacao === 'Bloqueado').length;
 
-  const alternarSituacao = (id: string, nome: string, situacaoAtual: 'ativo' | 'inativo' | 'bloqueado') => {
-    const novaSituacao = situacaoAtual === 'ativo' ? 'bloqueado' : 'ativo';
-    const acaoTexto = novaSituacao === 'bloqueado' ? 'bloquear' : 'desbloquear/ativar';
+  const alternarSituacao = (id: string, nome: string, situacaoAtual: 'Ativo' | 'Inativo' | 'Bloqueado') => {
+    const novaSituacao = situacaoAtual === 'Ativo' ? 'Bloqueado' : 'Ativo';
+    const acaoTexto = novaSituacao === 'Bloqueado' ? 'bloquear' : 'desbloquear/ativar';
 
     confirmAction(`Deseja realmente ${acaoTexto} o acesso de ${nome}?`, async () => {
       try {
-        await userService.updateSituacao(id, novaSituacao);
+        await userService.updateSituacao(id, novaSituacao); 
         await loadData();
 
         const novoLog: LogAuditoria = {
           id: Math.random().toString(),
           autor: 'Renata Farias (Admin)',
-          acao: `${novaSituacao === 'bloqueado' ? 'Bloqueou' : 'Liberou'} o acesso de ${nome}`,
+          acao: `${novaSituacao === 'Bloqueado' ? 'Bloqueou' : 'Liberou'} o acesso de ${nome}`,
           dataHora: 'Agora mesmo'
         };
         setLogs([novoLog, ...logs]);
@@ -106,7 +105,7 @@ export const AdminUsuariosPage: React.FC = () => {
           email: novoEmail,
           areaAtuacao: novaArea,
           registroCrp: novoCrp || 'CRP 06/99999',
-          situacao: 'ativo'
+          situacao: 'Ativo'
         };
         setPsicologos([...psicologos, novoPsi]);
       }
@@ -176,7 +175,7 @@ export const AdminUsuariosPage: React.FC = () => {
         />
         <StatCard
           title="Psicólogos Habilitados"
-          value={psicologos.filter((p) => p.situacao === 'ativo').length.toString()}
+          value={psicologos.filter((p) => p.situacao === 'Ativo').length.toString()}
           change="Corpo clínico"
           changeType="neutral"
           icon="award-fill"
@@ -303,19 +302,19 @@ export const AdminUsuariosPage: React.FC = () => {
                       </span>
                     </td>
                     <td>
-                      <span className={`badge ${u.situacao === 'ativo' ? 'bg-success-subtle text-success border border-success' : u.situacao === 'bloqueado' ? 'bg-danger-subtle text-danger border border-danger' : 'bg-secondary-subtle text-secondary border border-secondary'}`}>
+                      <span className={`badge ${u.situacao === 'Ativo' ? 'bg-success-subtle text-success border border-success' : u.situacao === 'Bloqueado' ? 'bg-danger-subtle text-danger border border-danger' : 'bg-secondary-subtle text-secondary border border-secondary'}`}>
                         {u.situacao.toUpperCase()}
                       </span>
                     </td>
                     <td className="text-muted small">{u.criadoEm}</td>
                     <td className="text-end">
                       <button
-                        className={`btn btn-sm ${u.situacao === 'ativo' ? 'btn-outline-danger' : 'btn-outline-success'}`}
+                        className={`btn btn-sm ${u.situacao === 'Ativo' ? 'btn-outline-danger' : 'btn-outline-success'}`}
                         onClick={() => alternarSituacao(u.id, u.nome, u.situacao)}
-                        title={u.situacao === 'ativo' ? 'Bloquear Acesso' : 'Desbloquear / Ativar'}
+                        title={u.situacao === 'Ativo' ? 'Bloquear Acesso' : 'Desbloquear / Ativar'}
                       >
-                        <i className={`bi ${u.situacao === 'ativo' ? 'bi-lock-fill' : 'bi-unlock-fill'} me-1`}></i>
-                        {u.situacao === 'ativo' ? 'Bloquear' : 'Liberar'}
+                        <i className={`bi ${u.situacao === 'Ativo' ? 'bi-lock-fill' : 'bi-unlock-fill'} me-1`}></i>
+                        {u.situacao === 'Ativo' ? 'Bloquear' : 'Liberar'}
                       </button>
                     </td>
                   </tr>
@@ -350,7 +349,7 @@ export const AdminUsuariosPage: React.FC = () => {
                     <td>{p.areaAtuacao}</td>
                     <td className="text-muted">{p.email}</td>
                     <td>
-                      <span className={`badge ${p.situacao === 'ativo' ? 'bg-success-subtle text-success border border-success' : 'bg-danger-subtle text-danger border border-danger'}`}>
+                      <span className={`badge ${p.situacao === 'Ativo' ? 'bg-success-subtle text-success border border-success' : 'bg-danger-subtle text-danger border border-danger'}`}>
                         {p.situacao.toUpperCase()}
                       </span>
                     </td>
