@@ -78,12 +78,12 @@ export const AgendaPage: React.FC = () => {
         {/* Grade Horária */}
         <div>
           <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-            <div className="d-flex gap-1 bg-white p-1 rounded-3 border">
+            <div className="d-flex gap-1 p-1 rounded-3 border" style={{ background: 'var(--bg-card)' }}>
               {(['Seg', 'Ter', 'Qua', 'Qui', 'Sex'] as const).map((dia) => (
                 <button
                   key={dia}
                   type="button"
-                  className={`btn btn-sm ${activeTab === dia ? 'btn-primary' : 'btn-light'} border-0`}
+                  className={`btn btn-sm ${activeTab === dia ? 'btn-primary' : 'btn-ghost'} border-0`}
                   style={{ fontWeight: 600, fontSize: '12.5px' }}
                   onClick={() => setActiveTab(dia)}
                 >

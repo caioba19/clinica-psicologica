@@ -139,22 +139,22 @@ export const ParaPsicologosPage: React.FC = () => {
             Por que migrar para o PsicoManager?
           </h2>
           <div className="table-responsive">
-            <table className="table table-borderless align-middle" style={{ color: '#fff', margin: 0 }}>
+            <table className="table table-dark table-borderless align-middle mb-0" style={{ backgroundColor: 'transparent', margin: 0 }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.15)' }}>
-                  <th style={{ padding: '12px 16px', color: 'rgba(255,255,255,0.6)', fontSize: '12px', textTransform: 'uppercase' }}>Funcionalidade</th>
-                  <th style={{ padding: '12px 16px', color: '#e05c5c', fontSize: '12px', textTransform: 'uppercase' }}>Métodos Manuais / Planilhas</th>
-                  <th style={{ padding: '12px 16px', color: '#5cb8a8', fontSize: '12px', textTransform: 'uppercase' }}>Com o PsicoManager</th>
+                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.15)', background: 'transparent' }}>
+                  <th style={{ padding: '14px 16px', color: 'rgba(255,255,255,0.7)', fontSize: '12px', textTransform: 'uppercase', background: 'transparent' }}>Funcionalidade</th>
+                  <th style={{ padding: '14px 16px', color: '#ff7b7b', fontSize: '12px', textTransform: 'uppercase', background: 'transparent' }}>Métodos Manuais / Planilhas</th>
+                  <th style={{ padding: '14px 16px', color: '#5cb8a8', fontSize: '12px', textTransform: 'uppercase', background: 'transparent' }}>Com o PsicoManager</th>
                 </tr>
               </thead>
               <tbody>
                 {comparativo.map((c, idx) => (
-                  <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                    <td style={{ padding: '14px 16px', fontWeight: 600, fontSize: '13.5px' }}>{c.criterio}</td>
-                    <td style={{ padding: '14px 16px', color: 'rgba(255,255,255,0.6)', fontSize: '13px' }}>
+                  <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'transparent' }}>
+                    <td style={{ padding: '16px', fontWeight: 600, fontSize: '14px', color: '#ffffff', background: 'transparent' }}>{c.criterio}</td>
+                    <td style={{ padding: '16px', color: 'rgba(255,255,255,0.7)', fontSize: '13px', background: 'transparent' }}>
                       <i className="bi bi-x-circle text-danger me-2"></i>{c.manual}
                     </td>
-                    <td style={{ padding: '14px 16px', color: '#b8e3dc', fontSize: '13px', fontWeight: 600 }}>
+                    <td style={{ padding: '16px', color: '#b8e3dc', fontSize: '13px', fontWeight: 600, background: 'transparent' }}>
                       <i className="bi bi-check-circle-fill text-success me-2"></i>{c.psico}
                     </td>
                   </tr>

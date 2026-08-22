@@ -20,16 +20,19 @@ export const LoginPage: React.FC = () => {
     setLoading(true);
 
     setTimeout(() => {
-      login(email, password);
+      login(email, password, userType);
+      const isPaciente = userType === 'paciente' || email.includes('paciente') || email.includes('lucas');
       showToast(
-        userType === 'psicologo'
-          ? 'Bem-vinda de volta, Dra. Sofia Mendes!'
-          : 'Login de paciente realizado com sucesso!',
+        isPaciente
+          ? 'Login de paciente realizado com sucesso!'
+          : email.includes('admin') || email.includes('renata')
+          ? 'Bem-vinda, Administradora Renata Farias!'
+          : 'Bem-vinda de volta, Dra. Sofia Mendes!',
         'success'
       );
-      navigate('/dashboard');
+      navigate(isPaciente ? '/paciente/portal' : '/dashboard');
       setLoading(false);
-    }, 500);
+    }, 400);
   };
 
   const handlePreencherDemo = () => {

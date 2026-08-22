@@ -129,7 +129,7 @@ export const RelatoriosPage: React.FC = () => {
                   #{item.rank}
                 </span>
                 <div style={{ flex: 1 }}>
-                  <strong className="d-block text-dark" style={{ fontSize: '13.5px' }}>{item.nome}</strong>
+                  <strong className="d-block" style={{ fontSize: '13.5px', color: 'var(--text-primary)' }}>{item.nome}</strong>
                   <div className="progress mt-1" style={{ height: '6px' }}>
                     <div
                       className="progress-bar bg-success"
@@ -139,7 +139,7 @@ export const RelatoriosPage: React.FC = () => {
                   </div>
                 </div>
                 <div className="text-end">
-                  <strong className="d-block text-dark">{item.total} pac.</strong>
+                  <strong className="d-block" style={{ color: 'var(--text-primary)' }}>{item.total} pac.</strong>
                   <span className="text-muted small">{item.percent}%</span>
                 </div>
               </div>
