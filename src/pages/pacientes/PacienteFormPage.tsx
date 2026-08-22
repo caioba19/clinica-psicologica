@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useParams } from 'react-router-dom';
 import { useToast } from '../../context/ToastContext';
 import { maskCPF, maskPhone, maskCEP } from '../../utils/masks';
+import { isValidCPF, isValidEmail, isValidPhone } from '../../utils/validators';
+import { patientService } from '../../services/patientService';
 
 export const PacienteFormPage: React.FC = () => {
   const { id } = useParams<{ id?: string }>();
@@ -9,31 +11,92 @@ export const PacienteFormPage: React.FC = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
 
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
   const [formData, setFormData] = useState({
-    nome: isEditing ? 'Lucas Ferreira Mendes' : '',
-    cpf: isEditing ? '123.456.789-00' : '',
-    rg: isEditing ? '12.345.678-9' : '',
-    dataNasc: isEditing ? '1992-04-15' : '',
-    genero: isEditing ? 'Masculino' : 'Não informado',
-    estadoCivil: isEditing ? 'Solteiro(a)' : 'Solteiro(a)',
-    profissao: isEditing ? 'Desenvolvedor de Software' : '',
-    email: isEditing ? 'lucas.mendes@email.com' : '',
-    telefone: isEditing ? '(11) 98765-4321' : '',
-    telefoneEmergencia: isEditing ? '(11) 91111-2222' : '',
-    contatoEmergenciaNome: isEditing ? 'Carla Ferreira (Irmã)' : '',
-    cep: isEditing ? '01310-100' : '',
-    endereco: isEditing ? 'Av. Paulista, 1000' : '',
-    numero: isEditing ? '1000' : '',
-    complemento: isEditing ? 'Apto 42' : '',
-    bairro: isEditing ? 'Bela Vista' : '',
-    cidade: isEditing ? 'São Paulo' : '',
-    uf: isEditing ? 'SP' : 'SP',
-    convenio: isEditing ? 'Particular' : 'Particular',
-    status: isEditing ? 'Ativo' : 'Ativo',
-    motivoConsulta: isEditing ? 'Ansiedade generalizada e estresse ocupacional.' : '',
-    historicoSaude: isEditing ? 'Nega doenças crônicas ou cirurgias recentes. Faz uso esporádico de ansiolíticos prescritos.' : '',
-    observacoes: isEditing ? 'Prefere sessões nas segundas pela manhã.' : ''
+    nome: '',
+    cpf: '',
+    rg: '',
+    dataNasc: '',
+    genero: 'Feminino',
+    estadoCivil: 'Solteiro(a)',
+    profissao: '',
+    email: '',
+    telefone: '',
+    telefoneEmergencia: '',
+    contatoEmergenciaNome: '',
+    cep: '',
+    endereco: '',
+    numero: '',
+    complemento: '',
+    bairro: '',
+    cidade: '',
+    uf: 'SP',
+    convenio: 'Particular',
+    status: 'Ativo' as 'Ativo' | 'Inativo' | 'Em Espera',
+    motivoConsulta: '',
+    historicoSaude: '',
+    observacoes: ''
   });
+
+  useEffect(() => {
+    if (isEditing && id) {
+      setLoading(true);
+      patientService.getById(id).then((patient) => {
+        if (patient) {
+          setFormData({
+            nome: patient.nome || '',
+            cpf: patient.cpf || '',
+            rg: '',
+            dataNasc: patient.dataNasc ? patient.dataNasc.split(' ')[0] : '',
+            genero: patient.genero || 'Feminino',
+            estadoCivil: 'Solteiro(a)',
+            profissao: '',
+            email: patient.email || '',
+            telefone: patient.telefone || '',
+            telefoneEmergencia: '',
+            contatoEmergenciaNome: '',
+            cep: '',
+            endereco: '',
+            numero: '',
+            complemento: '',
+            bairro: '',
+            cidade: '',
+            uf: 'SP',
+            convenio: patient.convenio || 'Particular',
+            status: patient.status || 'Ativo',
+            motivoConsulta: patient.motivoConsulta || '',
+            historicoSaude: patient.historico || '',
+            observacoes: ''
+          });
+        } else {
+          showToast('Paciente não encontrado.', 'danger');
+          navigate('/pacientes');
+        }
+      }).finally(() => setLoading(false));
+    }
+  }, [id, isEditing]);
+
+  const validateField = (name: string, value: string) => {
+    let error = '';
+    if (name === 'nome' && value.trim().length < 3) {
+      error = 'O nome completo deve conter pelo menos 3 caracteres.';
+    } else if (name === 'cpf' && value.trim()) {
+      if (!isValidCPF(value)) {
+        error = 'CPF inválido. Verifique os números digitados.';
+      }
+    } else if (name === 'email' && value.trim()) {
+      if (!isValidEmail(value)) {
+        error = 'Formato de e-mail inválido.';
+      }
+    } else if (name === 'telefone' && value.trim()) {
+      if (!isValidPhone(value)) {
+        error = 'Telefone deve conter DDD e número válido.';
+      }
+    }
+    setErrors((prev) => ({ ...prev, [name]: error }));
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -48,26 +111,68 @@ export const PacienteFormPage: React.FC = () => {
     }
 
     setFormData((prev) => ({ ...prev, [name]: formattedValue }));
+    validateField(name, formattedValue);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.nome || !formData.cpf || !formData.telefone) {
-      showToast('Por favor, preencha os campos obrigatórios (*)', 'warning');
+
+    if (!formData.nome.trim()) {
+      showToast('O nome do paciente é obrigatório.', 'warning');
       return;
     }
 
-    showToast(
-      isEditing
-        ? `Cadastro de ${formData.nome} atualizado com sucesso!`
-        : `Paciente ${formData.nome} cadastrado com sucesso!`,
-      'success'
-    );
-    navigate('/pacientes');
+    if (!formData.cpf.trim() || !isValidCPF(formData.cpf)) {
+      showToast('Por favor, informe um CPF válido com 11 dígitos.', 'warning');
+      return;
+    }
+
+    if (!formData.telefone.trim() || !isValidPhone(formData.telefone)) {
+      showToast('Por favor, informe um telefone válido com DDD.', 'warning');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      if (isEditing && id) {
+        await patientService.update(id, {
+          nome: formData.nome,
+          cpf: formData.cpf,
+          dataNasc: formData.dataNasc,
+          genero: formData.genero,
+          email: formData.email,
+          telefone: formData.telefone,
+          convenio: formData.convenio,
+          status: formData.status,
+          motivoConsulta: formData.motivoConsulta,
+          historico: formData.historicoSaude
+        });
+        showToast(`Cadastro de ${formData.nome} atualizado com sucesso!`, 'success');
+      } else {
+        await patientService.create({
+          nome: formData.nome,
+          cpf: formData.cpf,
+          dataNasc: formData.dataNasc,
+          genero: formData.genero,
+          email: formData.email,
+          telefone: formData.telefone,
+          convenio: formData.convenio,
+          status: formData.status,
+          motivoConsulta: formData.motivoConsulta,
+          historico: formData.historicoSaude
+        });
+        showToast(`Paciente ${formData.nome} cadastrado com sucesso!`, 'success');
+      }
+      navigate('/pacientes');
+    } catch (err: any) {
+      showToast(err.message || 'Erro ao salvar paciente.', 'danger');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const initials = formData.nome
-    ? formData.nome.split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase()
+    ? formData.nome.split(' ').filter(Boolean).map((n) => n[0]).join('').substring(0, 2).toUpperCase()
     : 'PX';
 
   return (
@@ -122,25 +227,27 @@ export const PacienteFormPage: React.FC = () => {
                 <label className="form-label">Nome Completo *</label>
                 <input
                   type="text"
-                  className="form-control"
+                  className={`form-control ${errors.nome ? 'is-invalid' : ''}`}
                   name="nome"
                   value={formData.nome}
                   onChange={handleChange}
                   placeholder="Ex: Lucas Ferreira Mendes"
                   required
                 />
+                {errors.nome && <div className="invalid-feedback">{errors.nome}</div>}
               </div>
               <div className="col-md-3">
                 <label className="form-label">CPF *</label>
                 <input
                   type="text"
-                  className="form-control"
+                  className={`form-control ${errors.cpf ? 'is-invalid' : ''}`}
                   name="cpf"
                   value={formData.cpf}
                   onChange={handleChange}
                   placeholder="000.000.000-00"
                   required
                 />
+                {errors.cpf && <div className="invalid-feedback">{errors.cpf}</div>}
               </div>
               <div className="col-md-3">
                 <label className="form-label">RG</label>
@@ -157,14 +264,13 @@ export const PacienteFormPage: React.FC = () => {
 
             <div className="row g-3">
               <div className="col-md-3">
-                <label className="form-label">Data de Nascimento *</label>
+                <label className="form-label">Data de Nascimento</label>
                 <input
                   type="date"
                   className="form-control"
                   name="dataNasc"
                   value={formData.dataNasc}
                   onChange={handleChange}
-                  required
                 />
               </div>
               <div className="col-md-3">
@@ -212,24 +318,26 @@ export const PacienteFormPage: React.FC = () => {
                 <label className="form-label">E-mail Principal</label>
                 <input
                   type="email"
-                  className="form-control"
+                  className={`form-control ${errors.email ? 'is-invalid' : ''}`}
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="paciente@email.com"
                 />
+                {errors.email && <div className="invalid-feedback">{errors.email}</div>}
               </div>
               <div className="col-md-4">
                 <label className="form-label">Telefone / WhatsApp *</label>
                 <input
                   type="text"
-                  className="form-control"
+                  className={`form-control ${errors.telefone ? 'is-invalid' : ''}`}
                   name="telefone"
                   value={formData.telefone}
                   onChange={handleChange}
                   placeholder="(00) 00000-0000"
                   required
                 />
+                {errors.telefone && <div className="invalid-feedback">{errors.telefone}</div>}
               </div>
               <div className="col-md-4">
                 <label className="form-label">Contato de Emergência</label>
@@ -340,8 +448,17 @@ export const PacienteFormPage: React.FC = () => {
           <Link to="/pacientes" className="btn-ghost">
             Cancelar
           </Link>
-          <button type="submit" className="btn-accent">
-            <i className="bi bi-check-lg me-1"></i> {isEditing ? 'Salvar Alterações' : 'Concluir Cadastro'}
+          <button type="submit" className="btn-accent" disabled={loading}>
+            {loading ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                Salvando...
+              </>
+            ) : (
+              <>
+                <i className="bi bi-check-lg me-1"></i> {isEditing ? 'Salvar Alterações' : 'Concluir Cadastro'}
+              </>
+            )}
           </button>
         </div>
       </form>

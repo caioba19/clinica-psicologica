@@ -1,19 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StatCard } from '../../components/common/StatCard';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { patientService } from '../../services/patientService';
 
 export const DashboardPage: React.FC = () => {
   const { user } = useAuth();
   const { showToast } = useToast();
+  const [pacientesAtivosCount, setPacientesAtivosCount] = useState<number>(0);
 
   const [tasks, setTasks] = useState([
     { id: 1, text: 'Finalizar laudo psicológico de Lucas Ferreira', done: false, tag: 'Urgente', tagClass: 'urgente' },
-    { id: 2, text: 'Enviar link da sessão online para Ana Paula', done: true, tag: 'Normal', tagClass: 'normal' },
-    { id: 3, text: 'Confirmar horário da consulta de Beatriz Santos', done: false, tag: 'Hoje', tagClass: 'ok' },
-    { id: 4, text: 'Emitir recibo de pagamento - Mariana Costa', done: false, tag: 'Financeiro', tagClass: 'normal' }
+    { id: 2, text: 'Enviar link da sessão online para Mariana Costa', done: true, tag: 'Normal', tagClass: 'normal' },
+    { id: 3, text: 'Confirmar horário da consulta de Gabriel Santos', done: false, tag: 'Hoje', tagClass: 'ok' },
+    { id: 4, text: 'Emitir recibo de pagamento - Lucas Mendes', done: false, tag: 'Financeiro', tagClass: 'normal' }
   ]);
+
+  useEffect(() => {
+    patientService.getAll().then((data) => {
+      const ativos = data.filter((p) => p.status === 'Ativo').length;
+      setPacientesAtivosCount(ativos);
+    }).catch(() => {
+      setPacientesAtivosCount(4);
+    });
+  }, []);
 
   const toggleTask = (id: number) => {
     setTasks((prev) =>
@@ -24,10 +35,10 @@ export const DashboardPage: React.FC = () => {
 
   const consultasHoje = [
     { hora: '09:00', periodo: 'Manhã', nome: 'Lucas Ferreira Mendes', tipo: 'TCC • Presencial (Sala 01)', avatar: 'LF', bg: '#2c5f6e' },
-    { hora: '10:30', periodo: 'Manhã', nome: 'Beatriz Santos Oliveira', tipo: 'Psicanálise • Presencial (Sala 01)', avatar: 'BS', bg: '#5cb8a8' },
-    { hora: '14:00', periodo: 'Tarde', nome: 'Ana Paula Rodrigues', tipo: 'TCC • Online (Google Meet)', avatar: 'AP', bg: '#3daa72' },
+    { hora: '10:30', periodo: 'Manhã', nome: 'Mariana Costa Ribeiro', tipo: 'Psicoterapia • Presencial (Sala 01)', avatar: 'MC', bg: '#5cb8a8' },
+    { hora: '14:00', periodo: 'Tarde', nome: 'Gabriel Santos Almeida', tipo: 'TCC • Online (Google Meet)', avatar: 'GS', bg: '#3daa72' },
     { hora: '16:00', periodo: 'Tarde', nome: 'Carlos Eduardo Ramos', tipo: 'Humanista • Presencial (Sala 02)', avatar: 'CE', bg: '#f0a500' },
-    { hora: '17:30', periodo: 'Tarde', nome: 'Mariana Costa Lima', tipo: 'Avaliação • Presencial (Sala 01)', avatar: 'MC', bg: '#e05c5c' }
+    { hora: '17:30', periodo: 'Tarde', nome: 'Beatriz Lima Rocha', tipo: 'Avaliação • Presencial (Sala 01)', avatar: 'BL', bg: '#e05c5c' }
   ];
 
   return (
@@ -59,8 +70,8 @@ export const DashboardPage: React.FC = () => {
           </p>
         </div>
         <div className="welcome-date text-end d-none d-md-block">
-          <p style={{ fontSize: '12.5px', color: 'rgba(255,255,255,0.6)', margin: 0 }}>Hoje é</p>
-          <strong style={{ fontSize: '15px', color: '#fff' }}>Segunda-feira, 17 de Agosto</strong>
+          <p style={{ fontSize: '12.5px', color: 'rgba(255,255,255,0.6)', margin: 0 }}>Perfil Ativo</p>
+          <strong style={{ fontSize: '15px', color: '#fff' }}>{user.role}</strong>
         </div>
       </div>
 
@@ -76,8 +87,8 @@ export const DashboardPage: React.FC = () => {
         />
         <StatCard
           title="Pacientes Ativos"
-          value="28"
-          change="+3 este mês"
+          value={pacientesAtivosCount.toString()}
+          change="Acompanhamento ativo"
           changeType="up"
           icon="people"
           color="blue"
@@ -92,7 +103,7 @@ export const DashboardPage: React.FC = () => {
         />
         <StatCard
           title="Prontuários Pendentes"
-          value="2"
+          value="1"
           change="Requer evolução"
           changeType="down"
           icon="journal-text"

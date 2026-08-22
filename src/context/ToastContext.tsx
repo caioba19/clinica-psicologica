@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
-export type ToastType = 'success' | 'error' | 'warning' | 'info';
+export type ToastType = 'success' | 'error' | 'warning' | 'info' | 'danger';
 
 export interface Toast {
   id: string;
@@ -51,7 +51,7 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   const iconFor = (type: ToastType) => {
     if (type === 'success') return 'bi-check-circle';
-    if (type === 'error') return 'bi-exclamation-circle';
+    if (type === 'error' || type === 'danger') return 'bi-exclamation-circle';
     if (type === 'warning') return 'bi-exclamation-triangle';
     return 'bi-info-circle';
   };

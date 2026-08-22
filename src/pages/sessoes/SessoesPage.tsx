@@ -1,26 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
 import { PrintModal } from '../../components/common/PrintModal';
-
-interface SessaoItem {
-  id: string;
-  num: number;
-  data: string;
-  tipo: string;
-  resumo: string;
-  plano: string;
-  status: 'Realizada' | 'Agendada';
-}
+import { patientService } from '../../services/patientService';
+import { sessionService, SessaoEvolucao } from '../../services/sessionService';
+import { Paciente } from '../../types';
 
 export const SessoesPage: React.FC = () => {
   const { showToast } = useToast();
   const { user } = useAuth();
-  const [selectedPacId, setSelectedPacId] = useState('1');
+
+  const [pacientes, setPacientes] = useState<Paciente[]>([]);
+  const [selectedPacId, setSelectedPacId] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'evolucoes' | 'anamnese' | 'documentos'>('evolucoes');
-  const [openSessaoId, setOpenSessaoId] = useState<string | null>('s1');
+  const [openSessaoId, setOpenSessaoId] = useState<string | null>(null);
   const [novaNota, setNovaNota] = useState('');
   const [planoAcao, setPlanoAcao] = useState('');
+  const [escalaHumor, setEscalaHumor] = useState<number>(7);
+  const [sessoes, setSessoes] = useState<SessaoEvolucao[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const [printDoc, setPrintDoc] = useState<{
     isOpen: boolean;
@@ -31,66 +29,72 @@ export const SessoesPage: React.FC = () => {
     tipo: 'evolucao'
   });
 
-  const pacientesLista = [
-    { id: '1', nome: 'Lucas Ferreira Mendes', idade: '34 anos', modalidade: 'TCC', sessoes: 12, crp: '06/123456', avatar: 'LF', color: '#2c5f6e' },
-    { id: '2', nome: 'Beatriz Santos Oliveira', idade: '27 anos', modalidade: 'Psicanálise', sessoes: 8, crp: '06/123456', avatar: 'BS', color: '#5cb8a8' },
-    { id: '3', nome: 'Carlos Eduardo Ramos', idade: '40 anos', modalidade: 'Humanista', sessoes: 24, crp: '06/123456', avatar: 'CE', color: '#f0a500' },
-    { id: '4', nome: 'Ana Paula Rodrigues', idade: '25 anos', modalidade: 'TCC', sessoes: 4, crp: '06/123456', avatar: 'AP', color: '#3daa72' }
-  ];
+  useEffect(() => {
+    patientService.getAll().then((data) => {
+      setPacientes(data);
+      if (data.length > 0) {
+        setSelectedPacId(data[0].id);
+      }
+    }).finally(() => setLoading(false));
+  }, []);
 
-  const currentPac = pacientesLista.find((p) => p.id === selectedPacId) || pacientesLista[0];
-
-  const [sessoes, setSessoes] = useState<SessaoItem[]>([
-    {
-      id: 's1',
-      num: 12,
-      data: '10/08/2026 às 09:00',
-      tipo: 'Sessão Individual • TCC',
-      resumo: 'Paciente relatou melhora nos episódios de ansiedade no trabalho após aplicação da técnica de reestruturação cognitiva. Trabalhamos a identificação de pensamentos automáticos disfuncionais em reuniões.',
-      plano: 'Manter registro diário de pensamentos disfuncionais (RPD) e aplicar respiração diafragmática 2x ao dia.',
-      status: 'Realizada'
-    },
-    {
-      id: 's2',
-      num: 11,
-      data: '03/08/2026 às 09:00',
-      tipo: 'Sessão Individual • TCC',
-      resumo: 'Exploração de crenças intermediárias sobre perfeccionismo e medo de falhar. Paciente apresentou resistência inicial, mas reconheceu o padrão de autoexigência.',
-      plano: 'Experimento comportamental: delegar uma tarefa no trabalho sem checagem prévia.',
-      status: 'Realizada'
-    },
-    {
-      id: 's3',
-      num: 10,
-      data: '27/07/2026 às 09:00',
-      tipo: 'Sessão Individual • TCC',
-      resumo: 'Revisão das metas terapêuticas estabelecidas no início do processo. Boa adesão às atividades propostas.',
-      plano: 'Introdução ao questionamento socrático para distorções cognitivas de catastrofização.',
-      status: 'Realizada'
+  useEffect(() => {
+    if (selectedPacId) {
+      sessionService.getByPaciente(selectedPacId).then((data) => {
+        setSessoes(data);
+        if (data.length > 0) {
+          setOpenSessaoId(data[0].id);
+        } else {
+          setOpenSessaoId(null);
+        }
+      });
     }
-  ]);
+  }, [selectedPacId]);
 
-  const handleSalvarEvolucao = (e: React.FormEvent) => {
+  const currentPac = pacientes.find((p) => p.id === selectedPacId) || pacientes[0] || {
+    id: 'pac1',
+    nome: 'Paciente Modelo',
+    email: '',
+    telefone: '',
+    cpf: '',
+    dataNasc: '',
+    genero: '',
+    status: 'Ativo' as const,
+    convenio: 'Particular',
+    totalSessoes: 0,
+    ultimaSessao: '',
+    avatarColor: '#2b6cb0',
+    motivoConsulta: 'Avaliação inicial',
+    historico: ''
+  };
+
+  const handleSalvarEvolucao = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!novaNota) {
+    if (!novaNota.trim()) {
       showToast('Digite a nota de evolução antes de salvar.', 'warning');
       return;
     }
 
-    const novaSessao: SessaoItem = {
-      id: Math.random().toString(),
-      num: sessoes.length + 1,
-      data: 'Hoje às 10:00',
-      tipo: 'Sessão Individual • TCC',
-      resumo: novaNota,
-      plano: planoAcao || 'Continuidade do plano terapêutico acordado.',
-      status: 'Realizada'
-    };
+    try {
+      const saved = await sessionService.addEvolucao({
+        pacienteId: selectedPacId,
+        num: sessoes.length + 1,
+        data: new Date().toLocaleDateString('pt-BR') + ' às ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+        tipo: 'Sessão Individual • TCC',
+        resumo: novaNota,
+        plano: planoAcao || 'Continuidade do plano terapêutico acordado.',
+        status: 'Realizada',
+        escalaHumor
+      });
 
-    setSessoes([novaSessao, ...sessoes]);
-    setNovaNota('');
-    setPlanoAcao('');
-    showToast('Evolução clínica registrada e criptografada no prontuário!', 'success');
+      setSessoes([saved, ...sessoes]);
+      setOpenSessaoId(saved.id);
+      setNovaNota('');
+      setPlanoAcao('');
+      showToast('Evolução clínica registrada e criptografada no prontuário!', 'success');
+    } catch (err: any) {
+      showToast('Erro ao salvar evolução clínica.', 'danger');
+    }
   };
 
   return (
@@ -102,338 +106,359 @@ export const SessoesPage: React.FC = () => {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '300px minmax(0, 1fr)', gap: '20px', alignItems: 'start' }}>
-        {/* Painel Esquerdo: Lista de Pacientes */}
-        <div className="card">
-          <div className="card-header p-3">
-            <h3 className="card-title" style={{ fontSize: '14px' }}>Selecionar Paciente</h3>
+      {loading ? (
+        <div className="card p-5 text-center">
+          <div className="spinner-border text-primary mx-auto mb-3" role="status"></div>
+          <p className="text-muted">Carregando prontuários eletrônicos...</p>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: '300px minmax(0, 1fr)', gap: '20px', alignItems: 'start' }}>
+          {/* Painel Esquerdo: Lista de Pacientes */}
+          <div className="card">
+            <div className="card-header p-3">
+              <h3 className="card-title" style={{ fontSize: '14px' }}>Selecionar Paciente</h3>
+            </div>
+            <div className="card-body p-0">
+              {pacientes.map((pac) => (
+                <div
+                  key={pac.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    padding: '12px 16px',
+                    cursor: 'pointer',
+                    borderBottom: '1px solid var(--border)',
+                    background: selectedPacId === pac.id ? 'rgba(92,184,168,0.1)' : 'transparent',
+                    borderLeft: selectedPacId === pac.id ? '4px solid var(--accent)' : '4px solid transparent'
+                  }}
+                  onClick={() => setSelectedPacId(pac.id)}
+                >
+                  <div
+                    style={{
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '50%',
+                      background: pac.avatarColor || '#2b6cb0',
+                      color: '#fff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '12px',
+                      fontWeight: 700
+                    }}
+                  >
+                    {pac.nome.split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase()}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p className="mb-0 text-truncate" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                      {pac.nome}
+                    </p>
+                    <span className="text-muted" style={{ fontSize: '11px' }}>{pac.convenio} • {pac.totalSessoes} sessões</span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="card-body p-0">
-            {pacientesLista.map((pac) => (
-              <div
-                key={pac.id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  padding: '12px 16px',
-                  cursor: 'pointer',
-                  borderBottom: '1px solid var(--border)',
-                  background: selectedPacId === pac.id ? 'rgba(92,184,168,0.1)' : 'transparent',
-                  borderLeft: selectedPacId === pac.id ? '4px solid var(--accent)' : '4px solid transparent'
-                }}
-                onClick={() => setSelectedPacId(pac.id)}
-              >
+
+          {/* Painel Direito: Prontuário do Paciente */}
+          <div>
+            {/* Banner Hero do Paciente */}
+            <div
+              style={{
+                background: 'linear-gradient(135deg, var(--bg-sidebar), var(--primary))',
+                borderRadius: 'var(--radius-lg)',
+                padding: '24px 28px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '20px',
+                color: '#fff',
+                flexWrap: 'wrap',
+                gap: '16px'
+              }}
+            >
+              <div className="d-flex align-items-center gap-3">
                 <div
                   style={{
-                    width: '36px',
-                    height: '36px',
+                    width: '58px',
+                    height: '58px',
                     borderRadius: '50%',
-                    background: pac.color,
+                    background: currentPac.avatarColor || '#2b6cb0',
                     color: '#fff',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: '12px',
-                    fontWeight: 700
+                    fontSize: '20px',
+                    fontWeight: 700,
+                    border: '2px solid rgba(255,255,255,0.3)'
                   }}
                 >
-                  {pac.avatar}
+                  {currentPac.nome.split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase()}
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p className="mb-0 text-truncate" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                    {pac.nome}
+                <div>
+                  <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '20px', fontWeight: 600, margin: 0 }}>
+                    {currentPac.nome}
+                  </h2>
+                  <p style={{ fontSize: '12.5px', color: 'rgba(255,255,255,0.7)', margin: 0 }}>
+                    CPF: {currentPac.cpf} • Convênio: {currentPac.convenio}
                   </p>
-                  <span className="text-muted" style={{ fontSize: '11px' }}>{pac.modalidade} • {pac.sessoes} sessões</span>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
 
-        {/* Painel Direito: Prontuário do Paciente */}
-        <div>
-          {/* Banner Hero do Paciente */}
-          <div
-            style={{
-              background: 'linear-gradient(135deg, var(--bg-sidebar), var(--primary))',
-              borderRadius: 'var(--radius-lg)',
-              padding: '24px 28px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: '20px',
-              color: '#fff',
-              flexWrap: 'wrap',
-              gap: '16px'
-            }}
-          >
-            <div className="d-flex align-items-center gap-3">
-              <div
-                style={{
-                  width: '58px',
-                  height: '58px',
-                  borderRadius: '50%',
-                  background: currentPac.color,
-                  color: '#fff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '20px',
-                  fontWeight: 700,
-                  border: '2px solid rgba(255,255,255,0.3)'
-                }}
+              <div className="d-flex gap-4 text-center">
+                <div>
+                  <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase' }}>Status</span>
+                  <div style={{ fontWeight: 700, fontSize: '14px', color: '#b8e3dc' }}>{currentPac.status}</div>
+                </div>
+                <div>
+                  <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase' }}>Sessões</span>
+                  <div style={{ fontWeight: 700, fontSize: '14px' }}>{sessoes.length || currentPac.totalSessoes}</div>
+                </div>
+                <div>
+                  <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase' }}>Responsável</span>
+                  <div style={{ fontWeight: 700, fontSize: '14px' }}>{user.name}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Abas */}
+            <div className="d-flex gap-2 mb-3">
+              <button
+                className={`btn btn-sm ${activeTab === 'evolucoes' ? 'btn-primary' : 'btn-outline-secondary'}`}
+                onClick={() => setActiveTab('evolucoes')}
               >
-                {currentPac.avatar}
-              </div>
-              <div>
-                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '20px', fontWeight: 600, margin: 0 }}>
-                  {currentPac.nome}
-                </h2>
-                <p style={{ fontSize: '12.5px', color: 'rgba(255,255,255,0.7)', margin: 0 }}>
-                  {currentPac.idade} • Abordagem: {currentPac.modalidade}
-                </p>
-              </div>
+                <i className="bi bi-journal-text me-1"></i> Registro de Evolução ({sessoes.length})
+              </button>
+              <button
+                className={`btn btn-sm ${activeTab === 'anamnese' ? 'btn-primary' : 'btn-outline-secondary'}`}
+                onClick={() => setActiveTab('anamnese')}
+              >
+                <i className="bi bi-person-vcard me-1"></i> Anamnese & Queixa
+              </button>
+              <button
+                className={`btn btn-sm ${activeTab === 'documentos' ? 'btn-primary' : 'btn-outline-secondary'}`}
+                onClick={() => setActiveTab('documentos')}
+              >
+                <i className="bi bi-file-earmark-text me-1"></i> Documentos & Laudos
+              </button>
             </div>
 
-            <div className="d-flex gap-4 text-center">
+            {/* Aba Evoluções */}
+            {activeTab === 'evolucoes' && (
               <div>
-                <strong style={{ fontSize: '20px', display: 'block' }}>{sessoes.length}</strong>
-                <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase' }}>Evoluções</span>
-              </div>
-              <div>
-                <strong style={{ fontSize: '20px', display: 'block' }}>100%</strong>
-                <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase' }}>Protegido</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Abas */}
-          <div className="d-flex gap-2 border-bottom mb-4">
-            <button
-              type="button"
-              className={`btn ${activeTab === 'evolucoes' ? 'btn-primary' : 'btn-ghost'} border-bottom-0 rounded-bottom-0`}
-              onClick={() => setActiveTab('evolucoes')}
-            >
-              <i className="bi bi-journal-text me-1"></i> Evoluções Clínicas
-            </button>
-            <button
-              type="button"
-              className={`btn ${activeTab === 'anamnese' ? 'btn-primary' : 'btn-ghost'} border-bottom-0 rounded-bottom-0`}
-              onClick={() => setActiveTab('anamnese')}
-            >
-              <i className="bi bi-file-earmark-person me-1"></i> Anamnese & Queixa
-            </button>
-            <button
-              type="button"
-              className={`btn ${activeTab === 'documentos' ? 'btn-primary' : 'btn-ghost'} border-bottom-0 rounded-bottom-0`}
-              onClick={() => setActiveTab('documentos')}
-            >
-              <i className="bi bi-paperclip me-1"></i> Laudos & Documentos
-            </button>
-          </div>
-
-          {/* Aba Evoluções */}
-          {activeTab === 'evolucoes' && (
-            <div>
-              {/* Novo Registro de Evolução */}
-              <div className="card mb-4">
-                <div className="card-header">
-                  <h3 className="card-title" style={{ fontSize: '15px' }}>
-                    <i className="bi bi-pencil-square me-2 text-primary"></i>Registrar Nova Evolução Clínica
-                  </h3>
-                </div>
-                <form onSubmit={handleSalvarEvolucao}>
-                  <div className="card-body">
-                    <div className="mb-3">
-                      <label className="form-label">Relato da Sessão & Evolução Psicológica *</label>
-                      <textarea
-                        className="form-control"
-                        rows={4}
-                        placeholder="Descreva as técnicas aplicadas, estado emocional do paciente, intervenções e observações clínicas relevantes..."
-                        value={novaNota}
-                        onChange={(e) => setNovaNota(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="mb-3">
-                      <label className="form-label">Plano de Ação / Tarefas Entre Sessões</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        placeholder="Ex: Registro diário de pensamentos, técnicas de relaxamento..."
-                        value={planoAcao}
-                        onChange={(e) => setPlanoAcao(e.target.value)}
-                      />
-                    </div>
-                    <div className="d-flex justify-content-between align-items-center">
-                      <span className="text-muted small">
-                        <i className="bi bi-shield-lock me-1"></i>Registro assinado digitalmente por Dra. Sofia Mendes (CRP 06/123456)
-                      </span>
-                      <button type="submit" className="btn-accent">
-                        <i className="bi bi-check-circle me-1"></i> Salvar no Prontuário
-                      </button>
-                    </div>
+                {/* Form Nova Evolução */}
+                <div className="card mb-4">
+                  <div className="card-header">
+                    <h3 className="card-title"><i className="bi bi-pencil-square me-2 text-primary"></i>Nova Evolução de Atendimento</h3>
                   </div>
-                </form>
-              </div>
-
-              {/* Histórico de Sessões Anteriores */}
-              <div className="card">
-                <div className="card-header">
-                  <h3 className="card-title">Histórico de Sessões ({sessoes.length})</h3>
-                </div>
-                <div className="card-body p-3">
-                  {sessoes.map((s) => {
-                    const isOpen = openSessaoId === s.id;
-                    return (
-                      <div key={s.id} className="border rounded-3 mb-3 overflow-hidden">
-                        <div
-                          className="p-3 bg-light d-flex align-items-center justify-content-between cursor-pointer"
-                          onClick={() => setOpenSessaoId(isOpen ? null : s.id)}
-                        >
-                          <div className="d-flex align-items-center gap-3">
-                            <span className="badge badge-primary">Sessão #{s.num}</span>
-                            <strong>{s.data}</strong>
-                            <span className="text-muted small">{s.tipo}</span>
-                          </div>
-                          <i className={`bi bi-chevron-${isOpen ? 'up' : 'down'} text-muted`}></i>
+                  <div className="card-body">
+                    <form onSubmit={handleSalvarEvolucao}>
+                      <div className="mb-3">
+                        <label className="form-label fw-bold">Descrição da Sessão / Relato Clínico *</label>
+                        <textarea
+                          className="form-control"
+                          rows={3}
+                          value={novaNota}
+                          onChange={(e) => setNovaNota(e.target.value)}
+                          placeholder="Descreva as técnicas aplicadas, intervenções realizadas e observações sobre o humor e discurso do paciente..."
+                          required
+                        />
+                      </div>
+                      <div className="row g-3 mb-3">
+                        <div className="col-md-8">
+                          <label className="form-label">Plano Terapêutico / Tarefas de Casa</label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            value={planoAcao}
+                            onChange={(e) => setPlanoAcao(e.target.value)}
+                            placeholder="Ex: Registro diário de pensamentos disfuncionais (RPD)"
+                          />
                         </div>
-                        {isOpen && (
-                          <div className="p-3 bg-white border-top">
-                            <p style={{ lineHeight: 1.7, color: 'var(--text-primary)', marginBottom: '12px' }}>
-                              {s.resumo}
-                            </p>
-                            {s.plano && (
-                              <div className="p-2 bg-light rounded border small mb-3">
-                                <strong>Plano / Tarefa:</strong> {s.plano}
+                        <div className="col-md-4">
+                          <label className="form-label">Escala de Humor / Adesão (1 a 10)</label>
+                          <input
+                            type="number"
+                            min="1"
+                            max="10"
+                            className="form-control"
+                            value={escalaHumor}
+                            onChange={(e) => setEscalaHumor(Number(e.target.value))}
+                          />
+                        </div>
+                      </div>
+                      <div className="d-flex justify-content-end">
+                        <button type="submit" className="btn-accent">
+                          <i className="bi bi-check-lg me-1"></i> Salvar no Prontuário
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+
+                {/* Lista de Sessões Anteriores */}
+                <div className="card">
+                  <div className="card-header">
+                    <h3 className="card-title">Histórico de Atendimentos</h3>
+                  </div>
+                  <div className="card-body p-0">
+                    {sessoes.length === 0 ? (
+                      <div className="p-4 text-center text-muted">
+                        Nenhum atendimento registrado para este paciente ainda.
+                      </div>
+                    ) : (
+                      sessoes.map((s) => {
+                        const isOpen = openSessaoId === s.id;
+                        return (
+                          <div key={s.id} className="border-bottom">
+                            <div
+                              className="p-3 d-flex justify-content-between align-items-center"
+                              style={{ cursor: 'pointer', background: isOpen ? 'rgba(0,0,0,0.02)' : 'transparent' }}
+                              onClick={() => setOpenSessaoId(isOpen ? null : s.id)}
+                            >
+                              <div className="d-flex align-items-center gap-3">
+                                <span className="badge bg-primary">#{s.num}</span>
+                                <div>
+                                  <strong className="d-block">{s.tipo}</strong>
+                                  <span className="text-muted small"><i className="bi bi-calendar-event me-1"></i>{s.data}</span>
+                                </div>
+                              </div>
+                              <i className={`bi bi-chevron-${isOpen ? 'up' : 'down'} text-muted`}></i>
+                            </div>
+                            {isOpen && (
+                              <div className="p-3 bg-white border-top">
+                                <p style={{ lineHeight: 1.7, color: 'var(--text-primary)', marginBottom: '12px' }}>
+                                  {s.resumo}
+                                </p>
+                                {s.plano && (
+                                  <div className="p-2 bg-light rounded border small mb-3">
+                                    <strong>Plano / Tarefa:</strong> {s.plano}
+                                  </div>
+                                )}
+                                <div className="d-flex justify-content-between align-items-center">
+                                  {s.escalaHumor && (
+                                    <span className="badge bg-info-subtle text-info border">
+                                      Nível de Humor: {s.escalaHumor}/10
+                                    </span>
+                                  )}
+                                  <button
+                                    type="button"
+                                    className="btn btn-sm btn-ghost"
+                                    style={{ fontSize: '12px' }}
+                                    onClick={() => setPrintDoc({
+                                      isOpen: true,
+                                      tipo: 'evolucao',
+                                      detalhes: `Sessão #${s.num} (${s.data})\n\nRelato da Sessão:\n${s.resumo}\n\nPlano Terapêutico:\n${s.plano}`
+                                    })}
+                                  >
+                                    <i className="bi bi-printer me-1"></i> Imprimir Registro
+                                  </button>
+                                </div>
                               </div>
                             )}
-                            <div className="d-flex justify-content-end">
-                              <button
-                                type="button"
-                                className="btn btn-sm btn-ghost"
-                                style={{ fontSize: '12px' }}
-                                onClick={() => setPrintDoc({
-                                  isOpen: true,
-                                  tipo: 'evolucao',
-                                  detalhes: `Sessão #${s.num} (${s.data})\n\nRelato da Sessão:\n${s.resumo}\n\nPlano Terapêutico:\n${s.plano}`
-                                })}
-                              >
-                                <i className="bi bi-printer me-1"></i> Imprimir Registro
-                              </button>
-                            </div>
                           </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Aba Anamnese */}
-          {activeTab === 'anamnese' && (
-            <div className="card">
-              <div className="card-header d-flex justify-content-between align-items-center">
-                <h3 className="card-title">Anamnese Completa</h3>
-                <button
-                  type="button"
-                  className="btn btn-sm btn-ghost"
-                  style={{ fontSize: '12px' }}
-                  onClick={() => setPrintDoc({
-                    isOpen: true,
-                    tipo: 'laudo',
-                    detalhes: `Paciente: ${currentPac.nome} (${currentPac.idade})\nAbordagem: ${currentPac.modalidade}\n\nQueixa Principal:\nPaciente buscou atendimento devido a crises de ansiedade associadas à sobrecarga de trabalho.\n\nHistórico Familiar & Social:\nHistórico familiar positivo para depressão. Relata isolamento social nos últimos 6 meses.`
-                  })}
-                >
-                  <i className="bi bi-printer me-1"></i> Imprimir Laudo Inicial
-                </button>
-              </div>
-              <div className="card-body">
-                <div className="row g-3 mb-3">
-                  <div className="col-md-6">
-                    <label className="text-muted small fw-bold">QUEIXA PRINCIPAL</label>
-                    <p className="p-2 bg-light rounded border mb-0">
-                      Paciente buscou atendimento devido a crises de ansiedade associadas à sobrecarga de trabalho.
-                    </p>
-                  </div>
-                  <div className="col-md-6">
-                    <label className="text-muted small fw-bold">HISTÓRICO FAMILIAR</label>
-                    <p className="p-2 bg-light rounded border mb-0">
-                      Mãe com histórico de transtorno depressivo. Pai sem histórico psiquiátrico relatado.
-                    </p>
+                        );
+                      })
+                    )}
                   </div>
                 </div>
+              </div>
+            )}
 
-                <div className="mb-3">
-                  <label className="text-muted small fw-bold">HISTÓRICO PESSOAL E SOCIAL</label>
-                  <p className="p-2 bg-light rounded border mb-0">
-                    Graduado em Ciência da Computação, atua em modelo remoto. Relata isolamento social moderado nos últimos 6 meses.
-                  </p>
+            {/* Aba Anamnese */}
+            {activeTab === 'anamnese' && (
+              <div className="card">
+                <div className="card-header d-flex justify-content-between align-items-center">
+                  <h3 className="card-title">Anamnese & Histórico Clínico</h3>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-ghost"
+                    style={{ fontSize: '12px' }}
+                    onClick={() => setPrintDoc({
+                      isOpen: true,
+                      tipo: 'laudo',
+                      detalhes: `Paciente: ${currentPac.nome}\nCPF: ${currentPac.cpf}\nConvênio: ${currentPac.convenio}\n\nQueixa Principal:\n${currentPac.motivoConsulta || 'Em avaliação inicial.'}\n\nHistórico Clínico:\n${currentPac.historico || 'Sem anotações complementares.'}`
+                    })}
+                  >
+                    <i className="bi bi-printer me-1"></i> Imprimir Laudo Inicial
+                  </button>
                 </div>
-              </div>
-            </div>
-          )}
-
-          {/* Aba Documentos */}
-          {activeTab === 'documentos' && (
-            <div className="card">
-              <div className="card-header d-flex justify-content-between align-items-center">
-                <h3 className="card-title">Documentos & Declarações</h3>
-                <button
-                  className="btn-accent btn-sm"
-                  onClick={() => setPrintDoc({
-                    isOpen: true,
-                    tipo: 'declaracao',
-                    detalhes: 'Declaração de comparecimento emitida para fins de comprovação.'
-                  })}
-                >
-                  <i className="bi bi-file-earmark-plus me-1"></i> Gerar Declaração
-                </button>
-              </div>
-              <div className="card-body">
-                <div className="d-flex align-items-center justify-content-between p-3 border rounded mb-2">
-                  <div className="d-flex align-items-center gap-3">
-                    <i className="bi bi-file-earmark-pdf fs-3 text-danger"></i>
-                    <div>
-                      <strong className="d-block">Declaração de Comparecimento - Sessão #12</strong>
-                      <span className="text-muted small">Gerado em 10/08/2026 • PDF assinado</span>
+                <div className="card-body">
+                  <div className="mb-3">
+                    <label className="text-muted small fw-bold">QUEIXA PRINCIPAL / MOTIVO DA PROCURA</label>
+                    <div className="p-3 bg-light rounded border mt-1">
+                      {currentPac.motivoConsulta || 'Nenhuma queixa inicial descrita.'}
                     </div>
                   </div>
+                  <div className="mb-3">
+                    <label className="text-muted small fw-bold">HISTÓRICO DE SAÚDE E ANOTAÇÕES RELEVANTES</label>
+                    <div className="p-3 bg-light rounded border mt-1">
+                      {currentPac.historico || 'Sem histórico adicional registrado.'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Aba Documentos */}
+            {activeTab === 'documentos' && (
+              <div className="card">
+                <div className="card-header d-flex justify-content-between align-items-center">
+                  <h3 className="card-title">Documentos & Declarações</h3>
                   <button
-                    className="btn btn-sm btn-outline-primary"
+                    className="btn-accent btn-sm"
                     onClick={() => setPrintDoc({
                       isOpen: true,
                       tipo: 'declaracao',
-                      detalhes: 'Comparecimento à sessão de psicoterapia individual.'
+                      detalhes: 'Declaração de comparecimento emitida para fins de comprovação.'
                     })}
                   >
-                    <i className="bi bi-printer me-1"></i> Imprimir / PDF
+                    <i className="bi bi-file-earmark-plus me-1"></i> Gerar Declaração
                   </button>
                 </div>
-
-                <div className="d-flex align-items-center justify-content-between p-3 border rounded">
-                  <div className="d-flex align-items-center gap-3">
-                    <i className="bi bi-file-earmark-text fs-3 text-primary"></i>
-                    <div>
-                      <strong className="d-block">Contrato Terapêutico & Termo de Consentimento LGPD</strong>
-                      <span className="text-muted small">Assinado digitalmente em 15/05/2026</span>
+                <div className="card-body">
+                  <div className="d-flex align-items-center justify-content-between p-3 border rounded mb-2">
+                    <div className="d-flex align-items-center gap-3">
+                      <i className="bi bi-file-earmark-pdf fs-3 text-danger"></i>
+                      <div>
+                        <strong className="d-block">Declaração de Comparecimento - Sessão de Psicoterapia</strong>
+                        <span className="text-muted small">Emitida para {currentPac.nome} • PDF assinado digitalmente</span>
+                      </div>
                     </div>
+                    <button
+                      className="btn btn-sm btn-outline-primary"
+                      onClick={() => setPrintDoc({
+                        isOpen: true,
+                        tipo: 'declaracao',
+                        detalhes: 'Comparecimento à sessão de psicoterapia individual regular.'
+                      })}
+                    >
+                      <i className="bi bi-printer me-1"></i> Imprimir / PDF
+                    </button>
                   </div>
-                  <button
-                    className="btn btn-sm btn-outline-secondary"
-                    onClick={() => showToast('Contrato digital verificado e válido.', 'success')}
-                  >
-                    <i className="bi bi-check-circle me-1"></i> Válido
-                  </button>
+
+                  <div className="d-flex align-items-center justify-content-between p-3 border rounded">
+                    <div className="d-flex align-items-center gap-3">
+                      <i className="bi bi-file-earmark-text fs-3 text-primary"></i>
+                      <div>
+                        <strong className="d-block">Termo de Consentimento Livre e Esclarecido (LGPD/CFP)</strong>
+                        <span className="text-muted small">Assinado digitalmente por {currentPac.nome}</span>
+                      </div>
+                    </div>
+                    <button
+                      className="btn btn-sm btn-outline-secondary"
+                      onClick={() => showToast('Contrato e termo LGPD verificados e válidos.', 'success')}
+                    >
+                      <i className="bi bi-check-circle me-1"></i> Válido
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Modal de Impressão */}
       <PrintModal
@@ -444,7 +469,7 @@ export const SessoesPage: React.FC = () => {
           pacienteNome: currentPac.nome,
           psicologoNome: user.name || 'Dra. Sofia Mendes',
           psicologoCrp: user.crp || 'CRP 06/123456',
-          data: '17 de Agosto de 2026',
+          data: new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }),
           detalhes: printDoc.detalhes
         }}
       />

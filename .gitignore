@@ -13,41 +13,47 @@
 # testing
 /coverage
 
-# next.js
-/.next/
-/out/
-
-# production
+# production / build outputs
+/dist
+/dist-ssr
 /build
+/out
+/.next/
 
-# misc
+# IDEs & local editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS files
 .DS_Store
+Thumbs.db
 *.pem
 
-# debug
+# debug logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
-
-# env files (can opt-in for committing if needed)
-.env
-
-# vercel
-.vercel
+*.log
+.eslintcache
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
 
-/src/generated/prisma
-
-# generated local media uploads
-/.media-storage/
-
-# generated local RAG artifacts
-/data/rag/*
-!/data/rag/README.md
+# env files (segredos e configurações locais)
+.env
+.env.*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+!.env.example
 
 # IA & CLI Agents dotfolders
 .claude
@@ -67,14 +73,5 @@ next-env.d.ts
 migrations_sqlite_archive
 migrations_tmp_for_diff
 
-# Logs & build info
-*.log
-.eslintcache
-
-# Arquivos de ambiente e configurações sensíveis
-.env
-.env.*
-!.env.example
-
-# Arquivos de infraestrutura que não devem ir ao repositório público
+# infra
 docker-compose.override.yml

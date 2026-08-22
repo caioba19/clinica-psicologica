@@ -4,7 +4,7 @@ interface StatCardProps {
   title: string;
   value: string | number;
   change?: string;
-  changeType?: 'up' | 'down';
+  changeType?: 'up' | 'down' | 'neutral';
   icon: string;
   color?: 'teal' | 'blue' | 'green' | 'orange' | 'red';
 }

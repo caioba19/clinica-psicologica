@@ -6,6 +6,7 @@ interface EmptyStateProps {
   description?: string;
   actionText?: string;
   onAction?: () => void;
+  action?: React.ReactNode;
   className?: string;
 }
 
@@ -15,6 +16,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   description,
   actionText,
   onAction,
+  action,
   className = ''
 }) => {
   return (
@@ -52,6 +54,9 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         >
           {actionText}
         </button>
+      )}
+      {action && !actionText && (
+        <div className="mt-3">{action}</div>
       )}
     </div>
   );
